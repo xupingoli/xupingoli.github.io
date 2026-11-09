@@ -104,7 +104,7 @@
   .card .av.done .face { opacity:0; }
   .card.live { border-color:var(--p); animation:pulse 1.8s ease-in-out infinite; }
   .card.live.sel { border-color:var(--g); }
-  @keyframes pulse { 0%,100% { box-shadow:0 4px 0 #000, 0 0 0 0 rgba(247,57,146,0); } 50% { box-shadow:0 4px 0 #000, 0 0 16px 2px rgba(247,57,146,.6); } }
+  @keyframes pulse { 0%,100% { box-shadow:0 4px 0 #000, 0 0 0 0 rgba(247,57,146,0); } 50% { box-shadow:0 4px 0 #000, 0 0 22px 5px rgba(247,57,146,.75); } }
   .card .info { padding:6px 4px 2px; }
   .card .nm { font-weight:800; font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .card .st { font-size:11px; color:var(--mut); display:flex; align-items:center; gap:5px; }
@@ -126,6 +126,24 @@
   #list.lines .card .av.skin img, #list.lines .card .av.skin::after { display:none; }
   #list.lines .card .av .face { width:68%; opacity:1 !important; }
   #list.lines .card .rm { top:50%; left:auto; right:40px; transform:translateY(-50%); }
+  /* separadores e destaque de quem tá ao vivo */
+  .sep { grid-column:1 / -1; display:flex; align-items:center; gap:8px; margin:4px 2px 0; font-size:12px; color:var(--mut); }
+  .sep::after { content:""; flex:1; height:2px; background:var(--line); border-radius:2px; }
+  .sep.live { color:var(--p); text-shadow:2px 2px 0 #000; }
+  .sep.live::after { background:linear-gradient(90deg, var(--p), transparent); }
+  .sep b { background:var(--p); color:#fff; border:2px solid #000; border-radius:6px; padding:0 6px; font-size:11px; box-shadow:0 2px 0 #000; text-shadow:none; }
+  .sep:first-child { margin-top:0; }
+  .card .onair { position:absolute; left:50%; transform:translateX(-50%); z-index:2; bottom:52px; background:var(--p); color:#fff; border:2px solid #000; border-radius:7px; padding:1px 7px; font-size:10px; white-space:nowrap; box-shadow:0 3px 0 #000; animation:onair 1.4s ease-in-out infinite; }
+  @keyframes onair { 50% { background:#ff5fa8; transform:translateX(-50%) scale(1.06); } }
+  .card.live { border:3px solid var(--p); }
+  .card.live .nm { color:#ff7ab6; }
+  .card.off .av { filter:grayscale(.85) brightness(.7); transition:filter .2s; }
+  .card.off .nm { color:#c9c3dc; }
+  .card.off:hover .av, .card.off.sel .av { filter:none; }
+  #list.lines .card .onair { display:none; }
+  #list.lines .card.live .av { box-shadow:0 0 0 3px var(--p); }
+  .tile.is-live .lbl { background:var(--p); color:#fff; }
+  .tile.is-live .lbl .dot.live { background:#fff; box-shadow:0 0 8px #fff; }
   .none { grid-column:1 / -1; text-align:center; color:var(--mut); font-size:12px; padding:18px 0; }
 
   .dot { width:8px; height:8px; border-radius:2px; background:#5a5470; flex:none; display:inline-block; }
@@ -450,15 +468,29 @@ function renderList() {
     a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }));
   box.innerHTML = '';
   if (!items.length) { box.innerHTML = `<div class="none">${POVS.length ? 'Nenhum POV encontrado.' : 'Carregando POVs...'}</div>`; return; }
+  const nLive = items.filter(v => povStatus(v) === true).length;
+  let grupo = null;
   for (const v of items) {
+    const ps = povStatus(v);
+    const g = ps === true ? 'live' : 'rest';
+    if (g !== grupo) {
+      grupo = g;
+      const sep = document.createElement('div');
+      sep.className = 'sep ' + g;
+      sep.innerHTML = g === 'live'
+        ? `<span class="px">● Ao vivo</span><b>${nLive}</b>`
+        : `<span class="px">${nLive ? 'Offline' : 'Ninguém ao vivo agora'}</span>`;
+      box.appendChild(sep);
+    }
     const el = document.createElement('div');
-    el.className = 'card' + (isSel(v.id) ? ' sel' : '') + (povStatus(v) === true ? ' live' : '');
+    el.className = 'card' + (isSel(v.id) ? ' sel' : '') + (ps === true ? ' live' : ps === false ? ' off' : '');
     el.title = (isSel(v.id) ? 'Tirar da cena' : 'Colocar na cena') + (v.mc ? ` · Minecraft: ${v.mc}` : '');
     el.innerHTML = `
       ${avatarHtml(v)}
       <div class="info"><div class="nm">${esc(v.name)}</div><div class="st">${statusText(v)}</div></div>
       <span class="tg">${plats(v).map(tagHtml).join('')}</span>
       <span class="tick">${isSel(v.id) ? '✓' : ''}</span>
+      ${ps === true ? `<span class="onair px">● Ao vivo${povViewers(v) ? ' · ' + povViewers(v).toLocaleString('pt-BR') : ''}</span>` : ''}
       <button class="rm" title="${v.custom ? 'Remover da lista' : 'Esconder da lista'}">✕</button>`;
     el.onclick = () => toggleSel(v.id);
     el.querySelector('.rm').onclick = e => { e.stopPropagation(); removePov(v); };
@@ -602,7 +634,9 @@ function layout() {
     el.style.left = p.x + 'px'; el.style.top = p.y + 'px';
     el.style.width = p.w + 'px'; el.style.height = p.h + 'px';
     el.classList.toggle('focus', st.focus === k && ids.length > 1);
-    el.querySelector('.dot').classList.toggle('live', status[key(el.dataset.plat, v[el.dataset.plat])] === true);
+    const aoVivo = status[key(el.dataset.plat, v[el.dataset.plat])] === true;
+    el.querySelector('.dot').classList.toggle('live', aoVivo);
+    el.classList.toggle('is-live', aoVivo);
     el.querySelector('.fb').textContent = st.focus === k ? '⤡' : '⤢';
   }
 }
