@@ -55,7 +55,7 @@
   .panel { background:linear-gradient(180deg, rgba(29,25,45,.92), rgba(20,17,32,.95)); border:2px solid var(--g); border-radius:14px; box-shadow:var(--px-shadow), 0 0 30px rgba(30,232,54,.08); }
 
   /* sidebar */
-  #side { width:var(--side); flex:none; display:flex; flex-direction:column; padding:14px; gap:10px; min-height:0; transition:width .2s; }
+  #side { width:calc(var(--side) + var(--side-extra, 0px)); flex:none; display:flex; flex-direction:column; padding:14px; gap:10px; min-height:0; transition:width .2s; }
   #side.collapsed { width:56px; padding:10px 8px; }
   #side.collapsed > :not(.shead) , #side.collapsed .shead > :not(#collapse) { display:none; }
   .shead { display:flex; align-items:center; gap:6px; }
@@ -592,6 +592,13 @@ function place(ids, x, y, w, h, g, out) {
   });
 }
 
+const SIDE_EXTRA_MAX = 260;
+let sideExtra = 0;
+function setSideExtra(px) {
+  if (Math.abs(px - sideExtra) <= 1) return;
+  sideExtra = px;
+  document.documentElement.style.setProperty('--side-extra', px + 'px');
+}
 function layout() {
   const scene = $('#scene');
   const ids = st.selected.filter(povOf);
@@ -601,6 +608,7 @@ function layout() {
   scene.classList.toggle('empty', !ids.length);
   let msg = scene.querySelector('.emptymsg');
   if (!ids.length) {
+    setSideExtra(0);
     if (!msg) { msg = document.createElement('div'); msg.className = 'emptymsg'; msg.innerHTML = '<img src="img/favicon.png?v=3" alt=""><h3 class="px">Sua cena tá vazia</h3><p>Escolha <b>POVs</b> na esquerda pra assistir todo mundo ao mesmo tempo.</p>'; scene.appendChild(msg); }
     scene.style.height = '';
     return;
@@ -613,6 +621,7 @@ function layout() {
   const W = scene.clientWidth;
   const pos = {};
   if (mobile) {
+    setSideExtra(0);
     const th = W * 9 / 16;
     const order = st.focus && keep.has(st.focus) ? [st.focus, ...ids.filter(k => k !== st.focus)] : ids;
     order.forEach((k, i) => pos[k] = { x: 0, y: i * (th + g), w: W, h: th });
@@ -621,19 +630,35 @@ function layout() {
     scene.style.height = '';
     const H = scene.clientHeight;
     const f = st.focus && keep.has(st.focus) && ids.length > 1 ? st.focus : null;
-    if (!f) place(ids, 0, 0, W, H, g, pos);
-    else {
+    const desktop = (W, out) => {
+      if (!f) return place(ids, 0, 0, W, H, g, out);
       const rest = ids.filter(k => k !== f);
       const side = Math.max(160, W * 0.22);
       const bottom = Math.max(110, H * 0.24);
       if (bestGrid(1, W - side - g, H, g).tw >= bestGrid(1, W, H - bottom - g, g).tw) {
-        place([f], 0, 0, W - side - g, H, g, pos);
-        place(rest, W - side, 0, side, H, g, pos);
+        place([f], 0, 0, W - side - g, H, g, out);
+        place(rest, W - side, 0, side, H, g, out);
       } else {
-        place([f], 0, 0, W, H - bottom - g, g, pos);
-        place(rest, 0, H - bottom, W, bottom, g, pos);
+        place([f], 0, 0, W, H - bottom - g, g, out);
+        place(rest, 0, H - bottom, W, bottom, g, out);
       }
-    }
+    };
+    // Os players são 16:9; quando a altura limita, sobra espaço dos lados.
+    // A barra lateral cresce pra ocupar essa sobra (até um limite) e volta quando não sobra.
+    // largura que a cena teria com a barra no tamanho base (calculada pelo #app, não pela barra,
+    // que pode estar no meio da animação)
+    const app = $('#app'), cs = getComputedStyle(app);
+    const gap = parseFloat(cs.columnGap) || 14;
+    const base = st.collapsed ? 56 : (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--side')) || 310);
+    const chat = $('#chat');
+    const chatW = chat.classList.contains('hide') ? 0 : chat.offsetWidth + gap;
+    const total = app.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - base - gap - chatW;
+    const teste = {};
+    desktop(total, teste);
+    const ps = Object.values(teste);
+    const usado = Math.max(...ps.map(p => p.x + p.w)) - Math.min(...ps.map(p => p.x));
+    setSideExtra(st.collapsed ? 0 : Math.min(SIDE_EXTRA_MAX, Math.max(0, Math.floor(total - usado - 2))));
+    desktop(W, pos);
   }
   for (const k of ids) {
     const el = tiles.get(k), p = pos[k], v = povOf(k);
