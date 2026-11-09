@@ -4,7 +4,7 @@
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js';
 
-const VERSION = 'c3d-2';
+const VERSION = 'c3d-3';
 const SIZE = 240;              // px do card (renderiza em 2x)
 const D = Math.PI / 180;
 
@@ -98,13 +98,13 @@ function buildPlayer(tex, slim) {
 
 // poses: rotações em graus [x, y, z] de cada parte; y = deslocamento do corpo inteiro
 const POSES = {
-  acenando:    { rightArm: [0, 0, -150], leftArm: [0, 0, 6], head: [-6, -12, 6] },
+  acenando:    { rightArm: [0, 0, -150], leftArm: [0, 0, 6], head: [-6, -6, 6] },
   comemorando: { rightArm: [0, 0, -160], leftArm: [0, 0, 160], head: [-14, 0, 0], rightLeg: [0, 0, -4], leftLeg: [0, 0, 4] },
-  sentado:     { y: -10, rightLeg: [-90, 10, 0], leftLeg: [-90, -10, 0], rightArm: [-30, 0, 4], leftArm: [-30, 0, -4], head: [8, 10, 0] },
-  andando:     { rightArm: [40, 0, 0], leftArm: [-40, 0, 0], rightLeg: [-35, 0, 0], leftLeg: [35, 0, 0], head: [0, 15, 0] },
-  apontando:   { rightArm: [-90, 15, 0], leftArm: [10, 0, 6], head: [0, -10, 0] },
-  pensando:    { rightArm: [-120, 30, 20], leftArm: [-40, -40, 0], head: [10, -15, -10] },
-  relaxando:   { rightArm: [0, 0, -20], leftArm: [0, 0, 20], head: [-10, 20, 8], rightLeg: [0, 0, -6], leftLeg: [0, 0, 6] },
+  sentado:     { y: -10, rightLeg: [-90, 10, 0], leftLeg: [-90, -10, 0], rightArm: [-30, 0, 4], leftArm: [-30, 0, -4], head: [8, 4, 0] },
+  andando:     { rightArm: [40, 0, 0], leftArm: [-40, 0, 0], rightLeg: [-35, 0, 0], leftLeg: [35, 0, 0], head: [0, 6, 0] },
+  apontando:   { rightArm: [-90, 0, 0], leftArm: [10, 0, 6], head: [0, -5, 0] },
+  pensando:    { rightArm: [-120, 30, 20], leftArm: [-40, -20, 0], head: [10, -6, -8] },
+  relaxando:   { rightArm: [0, 0, -20], leftArm: [0, 0, 20], head: [-10, 8, 8], rightLeg: [0, 0, -6], leftLeg: [0, 0, 6] },
 };
 const POSE_NAMES = Object.keys(POSES);
 function applyPose(player, name) {
@@ -180,8 +180,8 @@ function buildGeo(geoJson, tex, idle) {
       const [ox, oy, oz] = c.origin, [sx, sy, sz] = c.size;
       const inf = c.inflate || 0;
       const box = new THREE.BoxGeometry(Math.max(sx + inf * 2, 0.001), Math.max(sy + inf * 2, 0.001), Math.max(sz + inf * 2, 0.001));
-      if (Array.isArray(c.uv)) boxUV(box, c.uv[0], c.uv[1], sx, sy, sz, tw, th, !!c.mirror);
-      else if (c.uv) faceUV(box, c.uv, tw, th);
+      if (Array.isArray(c.uv)) bbBoxUV(box, c.uv[0], c.uv[1], sx, sy, sz, tw, th, !!c.mirror);
+      else if (c.uv) bbFaceUV(box, c.uv, tw, th);
       const mesh = new THREE.Mesh(box, mat);
       const center = [-(ox + sx / 2), oy + sy / 2, oz + sz / 2];
       if (c.rotation) {
@@ -222,33 +222,71 @@ function buildGeo(geoJson, tex, idle) {
   }
   return root;
 }
-// UV por face do Bedrock: north=-z, south=+z, east/west (x invertido), up, down
-function faceUV(box, uv, tw, th) {
-  const map = [uv.west, uv.east, uv.up, uv.down, uv.south, uv.north];
+// ---- UV dos modelos Bedrock, seguindo as regras do Blockbench ----
+// Espaço do three = espaço do Blockbench (x do Bedrock invertido): east = +x, west = -x, north = -z, south = +z.
+// Cada face recebe um retângulo da textura; flipX/flipY espelham o retângulo.
+// Ordem das faces no BoxGeometry: +x, -x, +y, -y, +z, -z; vértices de cada face: TL, TR, BL, BR.
+const FACE_ORDER = ['east', 'west', 'up', 'down', 'south', 'north'];
+function setFaces(box, rects, tw, th) {
   const out = [];
-  map.forEach((f, i) => {
-    if (!f || !f.uv) { out.push(0, 0, 0, 0, 0, 0, 0, 0); return; }
-    const [u, v] = f.uv, [w, h] = f.uv_size || [0, 0];
-    let x1 = u / tw, x2 = (u + w) / tw, y1 = 1 - v / th, y2 = 1 - (v + h) / th;
-    if (i === 3) { const t = y1; y1 = y2; y2 = t; }          // face de baixo vem invertida
-    out.push(x1, y1, x2, y1, x1, y2, x2, y2);
-  });
+  for (const k of FACE_ORDER) {
+    const r = rects[k];
+    if (!r) { out.push(0, 0, 0, 0, 0, 0, 0, 0); continue; }
+    let x1 = r.x, x2 = r.x + r.w, y1 = r.y, y2 = r.y + r.h;
+    if (r.fx) [x1, x2] = [x2, x1];
+    if (r.fy) [y1, y2] = [y2, y1];
+    const U = x => x / tw, V = y => 1 - y / th;
+    out.push(U(x1), V(y1), U(x2), V(y1), U(x1), V(y2), U(x2), V(y2));
+  }
   box.attributes.uv.set(new Float32Array(out));
   box.attributes.uv.needsUpdate = true;
 }
+function bbBoxUV(box, u, v, w, h, d, tw, th, mirror) {
+  const r = {
+    east:  { x: u,             y: v + d, w: d, h },
+    north: { x: u + d,         y: v + d, w, h },
+    west:  { x: u + d + w,     y: v + d, w: d, h },
+    south: { x: u + d * 2 + w, y: v + d, w, h },
+    up:    { x: u + d,         y: v,     w, h: d, fx: true, fy: true },
+    down:  { x: u + d + w,     y: v,     w, h: d, fx: true },
+  };
+  if (mirror) {
+    [r.east, r.west] = [r.west, r.east];
+    for (const k in r) r[k].fx = !r[k].fx;
+  }
+  setFaces(box, r, tw, th);
+}
+function bbFaceUV(box, uv, tw, th) {
+  const r = {};
+  for (const k of FACE_ORDER) {
+    const f = uv[k];
+    if (!f || !f.uv) continue;
+    let [x, y] = f.uv, [w, h] = f.uv_size || [0, 0];
+    const fx = w < 0, fy = h < 0;
+    if (fx) { x += w; w = -w; }
+    if (fy) { y += h; h = -h; }
+    // no Bedrock as faces de cima/baixo vêm de ponta-cabeça em relação ao Blockbench
+    const up = k === 'up', down = k === 'down';
+    r[k] = { x, y, w, h, fx: up || down ? !fx : fx, fy: up ? !fy : fy };
+  }
+  setFaces(box, r, tw, th);
+}
+
+let POKE_DIR = 'pokemon/';
+export function setPokemonDir(d) { POKE_DIR = d; }   // só pra testes
 
 async function buildPokemon(base, sp) {
   const [geo, tex, idle] = await Promise.all([
-    loadJson(`${base}pokemon/${sp}/model.geo.json`),
-    loadTexture(`${base}pokemon/${sp}/texture.png`),
-    loadJson(`${base}pokemon/${sp}/idle.json`).catch(() => null),
+    loadJson(`${base}${POKE_DIR}${sp}/model.geo.json`),
+    loadTexture(`${base}${POKE_DIR}${sp}/texture.png`),
+    loadJson(`${base}${POKE_DIR}${sp}/idle.json`).catch(() => null),
   ]);
   const model = buildGeo(geo, tex, idle);
   // normaliza o tamanho: altura parecida pra todos, apoiados no chão
   model.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(model);
   const size = box.getSize(new THREE.Vector3());
-  const k = Math.min(15 / Math.max(size.y, 0.01), 20 / Math.max(size.x, size.z, 0.01));
+  const k = Math.min(16 / Math.max(size.y, 0.01), 20 / Math.max(size.x, size.z, 0.01));
   const wrap = new THREE.Group();
   model.position.set(-(box.min.x + box.max.x) / 2, -box.min.y, -(box.min.z + box.max.z) / 2);
   wrap.add(model);
@@ -273,29 +311,29 @@ function setup() {
   camera.lookAt(0, 15, 0);
 }
 
-// posições dos Pokémon ao redor do boneco (x, z, giro)
-const SPOTS = [[-15, 8, 30], [15, 6, -30], [0, -12, 0]];
-
 async function render(pov, base) {
   if (!renderer) setup();
   const holder = new THREE.Group();
   const seed = hash(pov.mc || pov.name);
+  const side = seed & 1 ? 1 : -1;            // Pokémon à direita ou à esquerda
+  const sp = (pov.pokemon || [])[0];
   if (pov.skin) {
     const tex = await loadTexture(base + pov.skin + (pov.skinV ? `?v=${pov.skinV}` : ''));
     const player = buildPlayer(tex, !!pov.slim);
-    applyPose(player, POSE_NAMES[seed % POSE_NAMES.length]);
-    player.root.rotation.y = ((seed >> 4) % 50 - 25) * D;
+    applyPose(player, POSE_NAMES[(seed >>> 1) % POSE_NAMES.length]);
+    // de frente pra câmera, só uma leve virada pro lado do Pokémon
+    player.root.rotation.y = side * 8 * D;
+    player.root.position.x = sp ? -side * 6 : 0;
     holder.add(player.root);
   }
-  const mons = (pov.pokemon || []).slice(0, SPOTS.length);
-  const built = await Promise.all(mons.map(sp => buildPokemon(base, sp).catch(() => null)));
-  built.forEach((m, i) => {
-    if (!m) return;
-    const [x, z, r] = SPOTS[i];
-    m.position.set(x, 0, z);
-    m.rotation.y = (180 + r) * D;   // os modelos do Cobblemon olham pro -z
+  const m = sp && await buildPokemon(base, sp).catch(() => null);
+  if (m) {
+    m.position.set(pov.skin ? side * 13 : 0, 0, 7);
+    // os modelos do Cobblemon olham pro -z; gira pra ficar de três-quartos, virado pro boneco
+    m.rotation.y = (180 - side * 30) * D;
+    if (!pov.skin) m.scale.multiplyScalar(1.6);
     holder.add(m);
-  });
+  }
   scene.add(holder);
   renderer.render(scene, camera);
   const url = renderer.domElement.toDataURL('image/webp', 0.92);
@@ -333,4 +371,17 @@ function cleanup() {
       if (k && k.startsWith('card:') && !k.startsWith(`card:${VERSION}|`)) localStorage.removeItem(k);
     }
   } catch {}
+}
+
+// só pra testes: um Pokémon sozinho, grande e de frente
+export async function debugPokemon(sp, yaw = 0) {
+  if (!renderer) setup();
+  const m = await buildPokemon('', sp);
+  m.rotation.y = (180 + yaw) * D;
+  m.position.set(0, 9, 45);
+  scene.add(m);
+  renderer.render(scene, camera);
+  const url = renderer.domElement.toDataURL('image/png');
+  scene.remove(m);
+  return url;
 }
