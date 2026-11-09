@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-09T03:02:12.118Z",
+ "updated": "2026-11-09T04:19:33.140Z",
  "povs": [
   {
    "name": "EuSleep",
@@ -9,7 +9,7 @@
    "skin": "skins/eusleep.png",
    "skinV": "b889c15e",
    "pokemon": [
-    "skitty"
+    "umbreon"
    ]
   },
   {
@@ -30,7 +30,7 @@
    "skinV": "f61a3591",
    "slim": true,
    "pokemon": [
-    "togepi"
+    "squirtle"
    ]
   },
   {
@@ -41,7 +41,7 @@
    "skinV": "5b3e0939",
    "slim": true,
    "pokemon": [
-    "jigglypuff"
+    "umbreon"
    ]
   },
   {
@@ -51,7 +51,7 @@
    "skin": "skins/winch4as.png",
    "skinV": "d4daef46",
    "pokemon": [
-    "swablu"
+    "absol"
    ]
   },
   {
@@ -62,7 +62,7 @@
    "skinV": "5f7f935e",
    "slim": true,
    "pokemon": [
-    "chikorita"
+    "wooper"
    ]
   },
   {
@@ -72,7 +72,7 @@
    "skin": "skins/zeffz_.png",
    "skinV": "54a9c13d",
    "pokemon": [
-    "jigglypuff"
+    "ralts"
    ]
   },
   {
@@ -83,7 +83,7 @@
    "skinV": "a00cf338",
    "slim": true,
    "pokemon": [
-    "shinx"
+    "togepi"
    ]
   },
   {
@@ -93,7 +93,7 @@
    "skin": "skins/o_mitsuke.png",
    "skinV": "b7dead05",
    "pokemon": [
-    "pikachu"
+    "bulbasaur"
    ]
   },
   {
@@ -113,7 +113,7 @@
    "skin": "skins/pecanha.png",
    "skinV": "e5234b85",
    "pokemon": [
-    "cubone"
+    "growlithe"
    ]
   },
   {
@@ -123,7 +123,7 @@
    "skin": "skins/kojjj.png",
    "skinV": "160bf9e6",
    "pokemon": [
-    "phanpy"
+    "bulbasaur"
    ]
   },
   {
@@ -134,7 +134,7 @@
    "skinV": "304e1fd7",
    "slim": true,
    "pokemon": [
-    "absol"
+    "mareep"
    ]
   },
   {
@@ -144,7 +144,7 @@
    "skin": "skins/milkshakespeare_.png",
    "skinV": "ccc018ee",
    "pokemon": [
-    "growlithe"
+    "swablu"
    ]
   },
   {
@@ -154,7 +154,7 @@
    "skin": "skins/valenanansi.png",
    "skinV": "ce9b856b",
    "pokemon": [
-    "chimchar"
+    "umbreon"
    ]
   },
   {
@@ -165,7 +165,7 @@
    "skin": "skins/sotuna.png",
    "skinV": "36adbee8",
    "pokemon": [
-    "growlithe"
+    "charmander"
    ]
   },
   {
@@ -175,7 +175,7 @@
    "skin": "skins/thesnowyraven.png",
    "skinV": "def02686",
    "pokemon": [
-    "pichu"
+    "absol"
    ]
   },
   {
@@ -185,7 +185,7 @@
    "skin": "skins/zecagods.png",
    "skinV": "77e338bb",
    "pokemon": [
-    "pikachu"
+    "cleffa"
    ]
   },
   {
@@ -195,7 +195,7 @@
    "skin": "skins/carteiro_cosmico.png",
    "skinV": "855ca943",
    "pokemon": [
-    "meowth"
+    "umbreon"
    ]
   },
   {
@@ -205,7 +205,7 @@
    "skin": "skins/dolededole.png",
    "skinV": "9d81ce2e",
    "pokemon": [
-    "chikorita"
+    "chimchar"
    ]
   },
   {
@@ -215,7 +215,7 @@
    "skin": "skins/starkinho.png",
    "skinV": "11e2c83e",
    "pokemon": [
-    "piplup"
+    "pichu"
    ]
   },
   {
@@ -226,7 +226,7 @@
    "skin": "skins/minevini27.png",
    "skinV": "dd98ab9b",
    "pokemon": [
-    "marill"
+    "teddiursa"
    ]
   },
   {
@@ -237,7 +237,7 @@
    "skinV": "752ff69e",
    "slim": true,
    "pokemon": [
-    "pichu"
+    "growlithe"
    ]
   },
   {
@@ -248,7 +248,7 @@
    "skin": "skins/kakacrads.png",
    "skinV": "7638264f",
    "pokemon": [
-    "eevee"
+    "pichu"
    ]
   },
   {
@@ -259,7 +259,7 @@
    "skinV": "383917b9",
    "slim": true,
    "pokemon": [
-    "ditto"
+    "gastly"
    ]
   },
   {
@@ -269,7 +269,7 @@
    "skin": "skins/michi8155.png",
    "skinV": "1819bda1",
    "pokemon": [
-    "gastly"
+    "chimchar"
    ]
   },
   {
@@ -279,7 +279,7 @@
    "skin": "skins/bingortv.png",
    "skinV": "f3b8a62f",
    "pokemon": [
-    "meowth"
+    "swablu"
    ]
   },
   {
@@ -290,7 +290,7 @@
    "skinV": "8b6d65c3",
    "slim": true,
    "pokemon": [
-    "cyndaquil"
+    "mew"
    ]
   },
   {
@@ -300,7 +300,7 @@
    "skin": "skins/comjuteviteazull.png",
    "skinV": "8c9b1fb8",
    "pokemon": [
-    "ralts"
+    "growlithe"
    ]
   },
   {
@@ -311,7 +311,7 @@
    "skinV": "e392c992",
    "slim": true,
    "pokemon": [
-    "absol"
+    "snorlax"
    ]
   }
  ]
