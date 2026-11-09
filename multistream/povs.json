@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-09T02:26:20.821Z",
+ "updated": "2026-11-09T02:26:34.387Z",
  "povs": [
   {
    "name": "EuSleep",
@@ -152,7 +152,8 @@
   {
    "name": "Michi",
    "mc": "Michi8155",
-   "kick": "caionomichi"
+   "kick": "caionomichi",
+   "skin": "skins/michi8155.png"
   },
   {
    "name": "Bingo",
