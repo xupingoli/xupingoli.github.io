@@ -70,8 +70,11 @@
   .card.sel { border-color:var(--acc); box-shadow:0 0 0 1px var(--acc) inset; }
   .card .av { width:100%; aspect-ratio:1; border-radius:8px; background:#0a0f0b center/cover no-repeat; display:grid; place-items:center; font-size:34px; font-weight:700; color:var(--acc); overflow:hidden; position:relative; }
   .card .av.skin { background:radial-gradient(circle at 50% 40%, #24452f 0%, #12261a 55%, #0a0f0b 100%); }
-  .card .av.skin img { position:absolute; left:50%; bottom:-4%; height:100%; transform:translateX(-50%); filter:drop-shadow(0 4px 6px rgba(0,0,0,.5)); transition:transform .2s; }
-  .card:hover .av.skin img { transform:translateX(-50%) scale(1.05); }
+  .card .av.skin img { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 4px 6px rgba(0,0,0,.45)); transition:transform .2s, opacity .3s; }
+  .card .av.skin img:not([src]) { opacity:0; }
+  .card:hover .av.skin img { transform:scale(1.06); }
+  .card .av .face { width:42%; aspect-ratio:1; image-rendering:pixelated; border-radius:4px; box-shadow:0 4px 10px rgba(0,0,0,.5); transition:opacity .3s; }
+  .card .av.done .face { opacity:0; }
   .card.live .av { box-shadow:0 0 0 2px var(--live) inset; }
   .card .nm { font-weight:700; font-size:13px; margin-top:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .card .st { font-size:11px; color:var(--mut); display:flex; align-items:center; gap:5px; }
@@ -87,7 +90,8 @@
   #list.lines .card .nm { margin:0; }
   #list.lines .card .tick { position:static; }
   #list.lines .card .tg { display:none; }
-  #list.lines .card .av.skin img { height:160%; bottom:-80%; }
+  #list.lines .card .av.skin img { display:none; }
+  #list.lines .card .av .face { width:70%; opacity:1 !important; }
   #list.lines .card .info { min-width:0; }
   #list.lines .card .rm { top:50%; left:auto; right:38px; transform:translateY(-50%); }
   .none { grid-column:1 / -1; text-align:center; color:var(--mut); font-size:12px; padding:18px 0; }
@@ -362,11 +366,35 @@ function statusText(v) {
   const unk = ps.filter(p => status[key(p, v[p])] === undefined);
   return `<span class="dot"></span>${checking || unk.some(p => p !== 'youtube') ? '...' : 'YouTube ?'}`;
 }
+function faceStyle(v) {
+  const u = esc(v.skin + (v.skinV ? '?v=' + v.skinV : ''));
+  return `background:url('${u}') 71.43% 14.29% / 800% auto, url('${u}') 14.29% 14.29% / 800% auto`;
+}
 function avatarHtml(v) {
-  if (v.skin) return `<div class="av skin"><img src="${esc(v.skin)}" alt="" decoding="sync"></div>`;
+  if (v.skin || (v.pokemon && v.pokemon.length)) {
+    const url = cardUrls.get(v.id);
+    return `<div class="av skin${url ? ' done' : ''}" data-card="${esc(v.id)}">${v.skin ? `<div class="face" style="${faceStyle(v)}"></div>` : ''}<img alt=""${url ? ` src="${url}"` : ''}></div>`;
+  }
   const a = plats(v).map(p => avatars[key(p, v[p])]).find(Boolean);
   if (a) return `<div class="av" style="background-image:url('${esc(a)}')"></div>`;
   return `<div class="av">${esc((v.name || '?')[0].toUpperCase())}</div>`;
+}
+
+/* cards 3D (skin em pose + Pokémon do Cobblemon), desenhados uma vez e guardados */
+const cardUrls = new Map();
+const cards3d = import('./cards3d.js').catch(e => { console.warn('cards 3D indisponíveis', e); return null; });
+function requestCards(items) {
+  cards3d.then(mod => {
+    if (!mod) return;
+    for (const v of items) {
+      if (cardUrls.has(v.id) || !(v.skin || (v.pokemon && v.pokemon.length))) continue;
+      cardUrls.set(v.id, null);
+      mod.cardImage(v).then(url => {
+        cardUrls.set(v.id, url);
+        document.querySelectorAll(`[data-card="${CSS.escape(v.id)}"]`).forEach(av => { av.querySelector('img').src = url; av.classList.add('done'); });
+      }).catch(e => console.warn('card', v.id, e));
+    }
+  });
 }
 
 function renderList() {
@@ -396,6 +424,7 @@ function renderList() {
     el.querySelector('.rm').onclick = e => { e.stopPropagation(); removePov(v); };
     box.appendChild(el);
   }
+  requestCards(items);
 }
 
 function toggleSel(id) {
