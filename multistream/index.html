@@ -54,11 +54,12 @@
   .row2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   #addForm { display:none; flex-direction:column; gap:8px; padding:10px; border:1px dashed var(--acc-d); border-radius:10px; }
   #addForm.open { display:flex; }
-  #addForm .plats { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  #addForm .plats { display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; }
   #addForm input { background:#0a0f0b; border:1px solid var(--line); border-radius:8px; padding:8px 10px; outline:0; }
   #addForm input:focus { border-color:var(--acc); }
   .plat.on.twitch { background:var(--tw); border-color:var(--tw); color:#fff; }
   .plat.on.kick { background:var(--kk); border-color:var(--kk); color:#04140a; }
+  .plat.on.youtube { background:#ff0033; border-color:#ff0033; color:#fff; }
 
   #list { flex:1; min-height:0; overflow:auto; display:grid; grid-template-columns:1fr 1fr; gap:8px; align-content:start; padding-right:2px; }
   #list.lines { grid-template-columns:1fr; }
@@ -67,7 +68,11 @@
   .card { position:relative; background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:6px; cursor:pointer; user-select:none; transition:border-color .15s, transform .15s; }
   .card:hover { border-color:var(--acc-d); }
   .card.sel { border-color:var(--acc); box-shadow:0 0 0 1px var(--acc) inset; }
-  .card .av { width:100%; aspect-ratio:1; border-radius:8px; background:#0a0f0b center/cover no-repeat; display:grid; place-items:center; font-size:34px; font-weight:700; color:var(--acc); overflow:hidden; }
+  .card .av { width:100%; aspect-ratio:1; border-radius:8px; background:#0a0f0b center/cover no-repeat; display:grid; place-items:center; font-size:34px; font-weight:700; color:var(--acc); overflow:hidden; position:relative; }
+  .card .av.skin { background:radial-gradient(circle at 50% 40%, #24452f 0%, #12261a 55%, #0a0f0b 100%); }
+  .card .av.skin img { position:absolute; left:50%; bottom:-4%; height:100%; transform:translateX(-50%); filter:drop-shadow(0 4px 6px rgba(0,0,0,.5)); transition:transform .2s; }
+  .card:hover .av.skin img { transform:translateX(-50%) scale(1.05); }
+  .card.live .av { box-shadow:0 0 0 2px var(--live) inset; }
   .card .nm { font-weight:700; font-size:13px; margin-top:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .card .st { font-size:11px; color:var(--mut); display:flex; align-items:center; gap:5px; }
   .card .tick { position:absolute; top:10px; right:10px; width:18px; height:18px; border-radius:50%; border:2px solid #fff; background:rgba(0,0,0,.35); display:grid; place-items:center; font-size:11px; color:#04140a; }
@@ -75,12 +80,14 @@
   .card .rm { position:absolute; top:10px; left:10px; width:20px; height:20px; border-radius:6px; border:0; background:rgba(0,0,0,.6); color:#fff; font-size:11px; display:none; padding:0; }
   .card:hover .rm { display:block; }
   .card .rm:hover { background:#c62828; }
-  .card .tg { position:absolute; bottom:8px; right:8px; }
+  .card .tg { position:absolute; top:10px; left:10px; display:flex; gap:3px; transition:opacity .15s; }
+  .card:hover .tg { opacity:0; }
   #list.lines .card { display:grid; grid-template-columns:38px 1fr auto; align-items:center; gap:10px; }
   #list.lines .card .av { width:38px; font-size:16px; }
   #list.lines .card .nm { margin:0; }
   #list.lines .card .tick { position:static; }
-  #list.lines .card .tg { position:static; grid-column:2; }
+  #list.lines .card .tg { display:none; }
+  #list.lines .card .av.skin img { height:160%; bottom:-80%; }
   #list.lines .card .info { min-width:0; }
   #list.lines .card .rm { top:50%; left:auto; right:38px; transform:translateY(-50%); }
   .none { grid-column:1 / -1; text-align:center; color:var(--mut); font-size:12px; padding:18px 0; }
@@ -90,6 +97,8 @@
   .tag { font-size:10px; font-weight:700; padding:1px 5px; border-radius:4px; color:#fff; }
   .tag.twitch { background:var(--tw); }
   .tag.kick { background:var(--kk); color:#04140a; }
+  .tag.youtube { background:#ff0033; }
+  .tile .ctl .pb { width:auto; padding:0 8px; font-size:11px; font-weight:700; }
 
   /* scene */
   #scene { flex:1; min-width:0; position:relative; border-radius:12px; }
@@ -178,11 +187,12 @@
       <div class="plats">
         <button type="button" class="btn plat twitch on" data-p="twitch">Twitch</button>
         <button type="button" class="btn plat kick" data-p="kick">Kick</button>
+        <button type="button" class="btn plat youtube" data-p="youtube" title="Cole o link ou o ID do canal (UC...)">YouTube</button>
       </div>
       <input id="chan" placeholder="canal ou link (ex: oflopi)">
       <div class="row2">
         <button type="submit" class="btn on">Adicionar</button>
-        <button type="button" class="btn" id="reset" title="Volta pra lista padrão do Xupeimon">Lista padrão</button>
+        <button type="button" class="btn" id="reset" title="Volta pra lista do Xupeimon">Lista padrão</button>
       </div>
     </form>
     <div class="row2">
@@ -205,159 +215,252 @@
 
 <script>
 /* ================= estado ================= */
-const DEFAULTS = [
-  { p:'kick',   c:'oflopi' },
-  { p:'kick',   c:'o-mitsuke' },
-  { p:'twitch', c:'ironicroseiro' },
-  { p:'twitch', c:'bolhasuco' },
-  { p:'twitch', c:'kojjlul' },
-];
-const KEY = 'xupeimon-multiview-v2';
-const OLD_KEY = 'xupeimon-multilive-v1';
+// A lista de POVs vem do bot do Discord (povs.json, gerado por "npm run site" no bot).
+const KEY = 'xupeimon-multiview-v3';
+const OLD_KEYS = ['xupeimon-multiview-v2', 'xupeimon-multilive-v1'];
+const OLD_DEFAULTS = ['kick:oflopi', 'kick:o-mitsuke', 'twitch:ironicroseiro', 'twitch:bolhasuco', 'twitch:kojjlul'];
 const AV_KEY = 'xupeimon-avatars';
+const PLATS = ['twitch', 'kick', 'youtube'];
+const PLABEL = { twitch: 'TW', kick: 'KICK', youtube: 'YT' };
+const PNAME = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube' };
 const host = location.hostname || 'localhost';
 const $ = s => document.querySelector(s);
-const id = ch => ch.p + ':' + ch.c;
 const clean = c => String(c || '').trim().toLowerCase()
   .replace(/^https?:\/\/(www\.)?(twitch\.tv|kick\.com)\//, '').replace(/[\/?#].*$/, '').replace(/[^a-z0-9_-]/g, '');
-const parseIds = str => str.split(',').map(s => s.split(':'))
-  .filter(a => a.length === 2 && (a[0] === 'twitch' || a[0] === 'kick') && clean(a[1]))
-  .map(([p, c]) => ({ p, c: clean(c) }));
+const cleanYt = c => (String(c || '').match(/UC[\w-]{22}/) || [''])[0];
+const cleanFor = (p, c) => p === 'youtube' ? cleanYt(c) : clean(c);
+const esc = s => String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+const key = (p, c) => p + ':' + c;
 
-let st = load();               // { channels, selected:[ids], focus, view, collapsed, chat, onlyLive }
-let status = {};               // id -> true | false | undefined
-let viewers = {};              // id -> número
+let BOT = [];            // POVs do bot
+let POVS = [];           // BOT (menos os escondidos) + adicionados à mão
+let st = loadState();
+let status = {};         // "plat:canal" -> true | false | undefined (desconhecido)
+let viewers = {};
 let avatars = {};
 try { avatars = JSON.parse(localStorage.getItem(AV_KEY)) || {}; } catch (e) {}
-let firstCheck = !st.hadSelection;
+let firstCheck = !st.saved;
 let kickApiOk = true;
 let chatTab = null;
 let addPlat = 'twitch';
 
-function load() {
-  const qs = new URLSearchParams(location.search);
-  let saved = null;
-  try { saved = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
-  const base = { channels: null, selected: [], focus: null, view: 'grid', collapsed: false, chat: innerWidth > 1200, onlyLive: false, hadSelection: false };
-  const s = Object.assign(base, saved || {});
-  if (saved) s.hadSelection = true;
-
-  if (qs.get('c')) {
-    const list = parseIds(qs.get('c'));
-    if (list.length) {
-      s.channels = list;
-      s.selected = qs.get('v') ? parseIds(qs.get('v')).map(id) : list.map(id);
-      s.hadSelection = true;
-      s.focus = null;
-    }
+function loadState() {
+  const base = { selected: [], focus: null, view: 'grid', collapsed: false, chat: innerWidth > 1200, onlyLive: false, custom: [], hidden: [], plat: {}, saved: false };
+  let s = null;
+  try { s = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+  if (s) return Object.assign(base, s, { saved: true });
+  for (const k of OLD_KEYS) {
+    try {
+      const o = JSON.parse(localStorage.getItem(k));
+      if (!o) continue;
+      base.legacy = Array.isArray(o) ? { channels: o, selected: [] } : o;
+      base.saved = !Array.isArray(o);
+      break;
+    } catch (e) {}
   }
-  if (!Array.isArray(s.channels) || !s.channels.length) {
-    let old = null;
-    try { old = JSON.parse(localStorage.getItem(OLD_KEY)); } catch (e) {}
-    s.channels = Array.isArray(old) && old.length ? old : DEFAULTS.slice();
-  }
-  s.channels = s.channels.map(ch => ({ p: ch.p === 'kick' ? 'kick' : 'twitch', c: clean(ch.c) })).filter(ch => ch.c);
-  const ids = new Set(s.channels.map(id));
-  s.selected = (s.selected || []).filter(k => ids.has(k));
-  if (!ids.has(s.focus)) s.focus = null;
-  return s;
+  return base;
 }
 function save() {
-  const { hadSelection, ...rest } = st;
+  const { saved, legacy, ...rest } = st;
   try { localStorage.setItem(KEY, JSON.stringify(rest)); } catch (e) {}
 }
-const chOf = k => st.channels.find(ch => id(ch) === k);
-const isSel = k => st.selected.includes(k);
+
+// "twitch:fulano" -> id do POV do bot que tem esse canal, ou cria um POV avulso
+function idForChannel(p, c) {
+  c = cleanFor(p, c);
+  if (!PLATS.includes(p) || !c) return null;
+  const v = BOT.find(b => b[p] === c);
+  if (v) { st.hidden = st.hidden.filter(h => h !== v.id); return v.id; }
+  if (!st.custom.some(x => x.p === p && x.c === c)) st.custom.push({ p, c });
+  return key(p, c);
+}
+const resolveToken = t => t.includes(':') ? idForChannel(...t.split(':')) : t;
+
+function applyLegacyAndUrl() {
+  if (st.legacy) {
+    const l = st.legacy;
+    for (const ch of l.channels || []) if (!OLD_DEFAULTS.includes(key(ch.p, ch.c))) idForChannel(ch.p, ch.c);
+    // canais da lista padrão antiga que não estão no bot não viram POV avulso
+    const known = t => !OLD_DEFAULTS.includes(t) || BOT.some(b => key('twitch', b.twitch) === t || key('kick', b.kick) === t);
+    st.selected = (l.selected || []).filter(known).map(t => resolveToken(t)).filter(Boolean);
+    if (l.focus && known(l.focus)) st.focus = resolveToken(l.focus);
+    for (const k of ['view', 'collapsed', 'chat', 'onlyLive']) if (k in l) st[k] = l[k];
+    delete st.legacy;
+  }
+  const qs = new URLSearchParams(location.search);
+  if (qs.get('c') || qs.get('v')) {
+    const cs = (qs.get('c') || '').split(',').filter(Boolean).map(resolveToken).filter(Boolean);
+    const vs = qs.get('v') ? qs.get('v').split(',').filter(Boolean).map(resolveToken).filter(Boolean) : cs;
+    st.selected = [...new Set(vs)];
+    st.focus = null;
+    st.saved = true;
+    firstCheck = false;
+  }
+}
+
+function buildPovs() {
+  const hidden = new Set(st.hidden);
+  const custom = st.custom.map(({ p, c }) => ({ id: key(p, c), name: c, [p]: c, custom: true }));
+  POVS = [...BOT.filter(v => !hidden.has(v.id)), ...custom];
+  const ids = new Set(POVS.map(v => v.id));
+  st.selected = [...new Set(st.selected)].filter(k => ids.has(k));
+  if (!ids.has(st.focus)) st.focus = null;
+}
+const povOf = id => POVS.find(v => v.id === id);
+const isSel = id => st.selected.includes(id);
+const plats = v => PLATS.filter(p => v[p]);
+
+function povStatus(v) {
+  let unknown = false;
+  for (const p of plats(v)) {
+    const s = status[key(p, v[p])];
+    if (s === true) return true;
+    if (s === undefined) unknown = true;
+  }
+  return unknown ? undefined : false;
+}
+function povViewers(v) {
+  return plats(v).reduce((n, p) => n + (status[key(p, v[p])] === true ? (viewers[key(p, v[p])] || 0) : 0), 0);
+}
+// plataforma usada no player: a escolhida na mão, senão a que está ao vivo
+function activePlat(v) {
+  const o = st.plat[v.id];
+  if (o && v[o]) return o;
+  const ps = plats(v);
+  return ps.find(p => status[key(p, v[p])] === true) || ps.find(p => status[key(p, v[p])] !== false) || ps[0];
+}
 
 /* ================= urls ================= */
-function playerSrc(ch) {
-  if (ch.p === 'twitch') return `https://player.twitch.tv/?channel=${encodeURIComponent(ch.c)}&parent=${encodeURIComponent(host)}&muted=true&autoplay=true`;
-  return `https://player.kick.com/${encodeURIComponent(ch.c)}?muted=true&autoplay=true`;
+function playerSrc(p, c) {
+  if (p === 'twitch') return `https://player.twitch.tv/?channel=${encodeURIComponent(c)}&parent=${encodeURIComponent(host)}&muted=true&autoplay=true`;
+  if (p === 'kick') return `https://player.kick.com/${encodeURIComponent(c)}?muted=true&autoplay=true`;
+  return `https://www.youtube.com/embed/live_stream?channel=${encodeURIComponent(c)}&autoplay=1&mute=1`;
 }
-function chatSrc(ch) {
-  if (ch.p === 'twitch') return `https://www.twitch.tv/embed/${encodeURIComponent(ch.c)}/chat?parent=${encodeURIComponent(host)}&darkpopout`;
-  return `https://kick.com/popout/${encodeURIComponent(ch.c)}/chat`;
+function chatSrc(p, c) {
+  if (p === 'twitch') return `https://www.twitch.tv/embed/${encodeURIComponent(c)}/chat?parent=${encodeURIComponent(host)}&darkpopout`;
+  if (p === 'kick') return `https://kick.com/popout/${encodeURIComponent(c)}/chat`;
+  return null; // o YouTube só deixa embutir o chat sabendo o ID da live
 }
-const pageUrl = ch => ch.p === 'twitch' ? `https://twitch.tv/${ch.c}` : `https://kick.com/${ch.c}`;
-const tagHtml = ch => `<span class="tag ${ch.p}">${ch.p === 'twitch' ? 'TW' : 'KICK'}</span>`;
+function pageUrl(p, c) {
+  if (p === 'twitch') return `https://twitch.tv/${c}`;
+  if (p === 'kick') return `https://kick.com/${c}`;
+  return `https://www.youtube.com/channel/${c}/live`;
+}
+function popoutChat(p, c) {
+  if (p === 'twitch') return `https://www.twitch.tv/popout/${c}/chat?popout=`;
+  if (p === 'kick') return `https://kick.com/popout/${c}/chat`;
+  return `https://www.youtube.com/channel/${c}/live`;
+}
+const tagHtml = p => `<span class="tag ${p}">${PLABEL[p]}</span>`;
 
 /* ================= sidebar ================= */
-function statusText(k) {
-  const s = status[k];
-  if (s === true) return `<span class="dot live"></span>${viewers[k] != null ? viewers[k].toLocaleString('pt-BR') + ' ao vivo' : 'Ao vivo'}`;
+function statusText(v) {
+  const s = povStatus(v);
+  if (s === true) { const n = povViewers(v); return `<span class="dot live"></span>${n ? n.toLocaleString('pt-BR') + ' ao vivo' : 'Ao vivo'}`; }
   if (s === false) return `<span class="dot"></span>Offline`;
-  return `<span class="dot"></span>${chOf(k)?.p === 'kick' ? 'Status ?' : '...'}`;
+  const ps = plats(v);
+  const unk = ps.filter(p => status[key(p, v[p])] === undefined);
+  return `<span class="dot"></span>${checking || unk.some(p => p !== 'youtube') ? '...' : 'YouTube ?'}`;
 }
-function passesLive(ch) { return !st.onlyLive || status[id(ch)] !== false; }
+function avatarHtml(v) {
+  if (v.skin) return `<div class="av skin"><img src="${esc(v.skin)}" alt="" decoding="sync"></div>`;
+  const a = plats(v).map(p => avatars[key(p, v[p])]).find(Boolean);
+  if (a) return `<div class="av" style="background-image:url('${esc(a)}')"></div>`;
+  return `<div class="av">${esc((v.name || '?')[0].toUpperCase())}</div>`;
+}
 
 function renderList() {
   const box = $('#list');
-  const q = clean($('#q').value);
+  const q = $('#q').value.trim().toLowerCase();
   box.className = st.view === 'list' ? 'lines' : '';
-  const items = st.channels.filter(ch => passesLive(ch) && (!q || ch.c.includes(q)));
-  // ao vivo primeiro, depois por nome
-  items.sort((a, b) => (status[id(b)] === true) - (status[id(a)] === true) || (viewers[id(b)] || 0) - (viewers[id(a)] || 0));
+  const items = POVS.filter(v => (!st.onlyLive || povStatus(v) !== false) &&
+    (!q || [v.name, v.mc, v.twitch, v.kick].some(x => x && String(x).toLowerCase().includes(q))));
+  items.sort((a, b) =>
+    (povStatus(b) === true) - (povStatus(a) === true) ||
+    povViewers(b) - povViewers(a) ||
+    !!b.top - !!a.top ||
+    a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }));
   box.innerHTML = '';
-  if (!items.length) { box.innerHTML = '<div class="none">Nenhum POV encontrado.</div>'; return; }
-  for (const ch of items) {
-    const k = id(ch);
+  if (!items.length) { box.innerHTML = `<div class="none">${POVS.length ? 'Nenhum POV encontrado.' : 'Carregando POVs...'}</div>`; return; }
+  for (const v of items) {
     const el = document.createElement('div');
-    el.className = 'card' + (isSel(k) ? ' sel' : '');
-    el.title = isSel(k) ? 'Tirar da cena' : 'Colocar na cena';
-    const av = avatars[k];
+    el.className = 'card' + (isSel(v.id) ? ' sel' : '') + (povStatus(v) === true ? ' live' : '');
+    el.title = (isSel(v.id) ? 'Tirar da cena' : 'Colocar na cena') + (v.mc ? ` · Minecraft: ${v.mc}` : '');
     el.innerHTML = `
-      <div class="av" ${av ? `style="background-image:url('${av}')"` : ''}>${av ? '' : ch.c[0].toUpperCase()}</div>
-      <div class="info"><div class="nm">${ch.c}</div><div class="st">${statusText(k)}</div></div>
-      <span class="tg">${tagHtml(ch)}</span>
-      <span class="tick">${isSel(k) ? '✓' : ''}</span>
-      <button class="rm" title="Remover da lista">✕</button>`;
-    el.onclick = () => toggleSel(k);
-    el.querySelector('.rm').onclick = e => { e.stopPropagation(); removeChannel(k); };
+      ${avatarHtml(v)}
+      <div class="info"><div class="nm">${esc(v.name)}</div><div class="st">${statusText(v)}</div></div>
+      <span class="tg">${plats(v).map(tagHtml).join('')}</span>
+      <span class="tick">${isSel(v.id) ? '✓' : ''}</span>
+      <button class="rm" title="${v.custom ? 'Remover da lista' : 'Esconder da lista'}">✕</button>`;
+    el.onclick = () => toggleSel(v.id);
+    el.querySelector('.rm').onclick = e => { e.stopPropagation(); removePov(v); };
     box.appendChild(el);
   }
 }
 
-function toggleSel(k) {
-  if (isSel(k)) { st.selected = st.selected.filter(x => x !== k); if (st.focus === k) st.focus = null; }
-  else st.selected.push(k);
+function toggleSel(id) {
+  if (isSel(id)) { st.selected = st.selected.filter(x => x !== id); if (st.focus === id) st.focus = null; }
+  else st.selected.push(id);
   save(); renderAll();
 }
-function removeChannel(k) {
-  st.channels = st.channels.filter(ch => id(ch) !== k);
-  st.selected = st.selected.filter(x => x !== k);
-  if (st.focus === k) st.focus = null;
-  save(); renderAll();
+function removePov(v) {
+  if (v.custom) st.custom = st.custom.filter(x => key(x.p, x.c) !== v.id);
+  else st.hidden.push(v.id);
+  buildPovs(); save(); renderAll();
+  toast(v.custom ? `${v.name} removido` : `${v.name} escondido (Lista padrão traz de volta)`);
 }
 
 /* ================= cena ================= */
 // iframes nunca são re-anexados (isso recarregaria a live); só reposicionamos.
 const tiles = new Map();
-function ensureTile(k) {
-  let el = tiles.get(k);
-  if (el) return el;
-  const ch = chOf(k);
+function ensureTile(v) {
+  let el = tiles.get(v.id);
+  const p = activePlat(v), c = v[p];
+  if (el) {
+    if (el.dataset.plat !== p) {     // trocou de plataforma (ex.: entrou ao vivo na Kick)
+      el.dataset.plat = p;
+      el.querySelector('iframe').src = playerSrc(p, c);
+      el.querySelector('.lt').outerHTML = `<span class="lt">${tagHtml(p)}</span>`;
+      el.querySelector('.ab').href = pageUrl(p, c);
+      updatePb(el, v, p);
+    }
+    return el;
+  }
   el = document.createElement('div');
   el.className = 'tile';
+  el.dataset.plat = p;
   el.innerHTML = `
-    <div class="lbl"><span class="dot"></span>${tagHtml(ch)}<span>${ch.c}</span></div>
+    <div class="lbl"><span class="dot"></span><span class="lt">${tagHtml(p)}</span><span>${esc(v.name)}</span></div>
     <div class="ctl">
+      <button class="pb" title="Trocar de plataforma"></button>
       <button class="fb" title="Destacar">⤢</button>
       <button class="cb" title="Ver chat">💬</button>
-      <a href="${pageUrl(ch)}" target="_blank" rel="noopener" title="Abrir no site">↗</a>
+      <a class="ab" href="${pageUrl(p, c)}" target="_blank" rel="noopener" title="Abrir no site">↗</a>
       <button class="x" title="Tirar da cena">✕</button>
     </div>
-    <iframe src="${playerSrc(ch)}" allowfullscreen allow="autoplay; fullscreen; picture-in-picture"></iframe>`;
-  el.querySelector('.fb').onclick = () => { st.focus = st.focus === k ? null : k; save(); layout(); };
-  el.querySelector('.cb').onclick = () => { chatTab = k; st.chat = true; save(); renderChat(); layout(); };
-  el.querySelector('.x').onclick = () => toggleSel(k);
+    <iframe src="${playerSrc(p, c)}" allowfullscreen allow="autoplay; fullscreen; picture-in-picture"></iframe>`;
+  updatePb(el, v, p);
+  el.querySelector('.pb').onclick = () => {
+    const ps = plats(v), cur = el.dataset.plat;
+    st.plat[v.id] = ps[(ps.indexOf(cur) + 1) % ps.length];
+    save(); renderAll();
+  };
+  el.querySelector('.fb').onclick = () => { st.focus = st.focus === v.id ? null : v.id; save(); layout(); };
+  el.querySelector('.cb').onclick = () => { chatTab = v.id; st.chat = true; save(); renderChat(); layout(); };
+  el.querySelector('.x').onclick = () => toggleSel(v.id);
   $('#scene').appendChild(el);
-  tiles.set(k, el);
+  tiles.set(v.id, el);
   return el;
+}
+function updatePb(el, v, p) {
+  const ps = plats(v), b = el.querySelector('.pb');
+  b.style.display = ps.length > 1 ? '' : 'none';
+  if (ps.length > 1) { const nx = ps[(ps.indexOf(p) + 1) % ps.length]; b.textContent = '⇄ ' + PLABEL[nx]; b.title = 'Trocar para ' + PNAME[nx]; }
 }
 
 // melhor grade (cols x rows) de tiles 16:9 dentro de w x h
 function bestGrid(n, w, h, g) {
-  let best = { cols: 1, tw: 0, th: 0 };
+  let best = { cols: 1, rows: 1, tw: 0, th: 0 };
   for (let cols = 1; cols <= n; cols++) {
     const rows = Math.ceil(n / cols);
     let tw = (w - (cols - 1) * g) / cols;
@@ -367,13 +470,13 @@ function bestGrid(n, w, h, g) {
   }
   return best;
 }
-function place(keys, x, y, w, h, g, out) {
-  const n = keys.length;
+function place(ids, x, y, w, h, g, out) {
+  const n = ids.length;
   if (!n) return;
   const b = bestGrid(n, w, h, g);
   const totalH = b.rows * b.th + (b.rows - 1) * g;
   const oy = y + (h - totalH) / 2;
-  keys.forEach((k, i) => {
+  ids.forEach((k, i) => {
     const r = Math.floor(i / b.cols), c = i % b.cols;
     const inRow = Math.min(b.cols, n - r * b.cols);
     const rowW = inRow * b.tw + (inRow - 1) * g;
@@ -384,46 +487,39 @@ function place(keys, x, y, w, h, g, out) {
 
 function layout() {
   const scene = $('#scene');
-  const keys = st.selected.filter(k => chOf(k));
-  const keep = new Set(keys);
+  const ids = st.selected.filter(povOf);
+  const keep = new Set(ids);
   for (const [k, el] of tiles) if (!keep.has(k)) { el.remove(); tiles.delete(k); }
 
-  scene.classList.toggle('empty', !keys.length);
+  scene.classList.toggle('empty', !ids.length);
   let msg = scene.querySelector('.emptymsg');
-  if (!keys.length) {
+  if (!ids.length) {
     if (!msg) { msg = document.createElement('div'); msg.className = 'emptymsg'; msg.innerHTML = '<h3 class="px">Sua cena tá vazia</h3><p>Escolha POVs na esquerda pra assistir todo mundo ao mesmo tempo.</p>'; scene.appendChild(msg); }
     scene.style.height = '';
     return;
   }
   if (msg) msg.remove();
-  keys.forEach(ensureTile);
+  ids.forEach(id => ensureTile(povOf(id)));
 
   const g = 10;
   const mobile = innerWidth <= 860;
   const W = scene.clientWidth;
   const pos = {};
-  let H;
   if (mobile) {
-    // uma coluna, a cena cresce pra baixo
     const th = W * 9 / 16;
-    const order = st.focus && keep.has(st.focus) ? [st.focus, ...keys.filter(k => k !== st.focus)] : keys;
+    const order = st.focus && keep.has(st.focus) ? [st.focus, ...ids.filter(k => k !== st.focus)] : ids;
     order.forEach((k, i) => pos[k] = { x: 0, y: i * (th + g), w: W, h: th });
-    H = order.length * (th + g) - g;
-    scene.style.height = H + 'px';
+    scene.style.height = (order.length * (th + g) - g) + 'px';
   } else {
     scene.style.height = '';
-    H = scene.clientHeight;
-    const f = st.focus && keep.has(st.focus) && keys.length > 1 ? st.focus : null;
-    if (!f) {
-      place(keys, 0, 0, W, H, g, pos);
-    } else {
-      const rest = keys.filter(k => k !== f);
-      // tenta faixa lateral e faixa embaixo, fica com a que deixa o destaque maior
+    const H = scene.clientHeight;
+    const f = st.focus && keep.has(st.focus) && ids.length > 1 ? st.focus : null;
+    if (!f) place(ids, 0, 0, W, H, g, pos);
+    else {
+      const rest = ids.filter(k => k !== f);
       const side = Math.max(160, W * 0.22);
-      const mainSide = bestGrid(1, W - side - g, H, g).tw;
       const bottom = Math.max(110, H * 0.24);
-      const mainBottom = bestGrid(1, W, H - bottom - g, g).tw;
-      if (mainSide >= mainBottom) {
+      if (bestGrid(1, W - side - g, H, g).tw >= bestGrid(1, W, H - bottom - g, g).tw) {
         place([f], 0, 0, W - side - g, H, g, pos);
         place(rest, W - side, 0, side, H, g, pos);
       } else {
@@ -432,104 +528,128 @@ function layout() {
       }
     }
   }
-  for (const k of keys) {
-    const el = tiles.get(k), p = pos[k];
+  for (const k of ids) {
+    const el = tiles.get(k), p = pos[k], v = povOf(k);
     el.style.left = p.x + 'px'; el.style.top = p.y + 'px';
     el.style.width = p.w + 'px'; el.style.height = p.h + 'px';
-    el.classList.toggle('focus', st.focus === k && keys.length > 1);
-    el.querySelector('.dot').classList.toggle('live', status[k] === true);
+    el.classList.toggle('focus', st.focus === k && ids.length > 1);
+    el.querySelector('.dot').classList.toggle('live', status[key(el.dataset.plat, v[el.dataset.plat])] === true);
     el.querySelector('.fb').textContent = st.focus === k ? '⤡' : '⤢';
   }
 }
 
 /* ================= chat ================= */
-const chatFrames = new Map();
+const chatFrames = new Map();   // "id|plat" -> iframe
 function renderChat() {
-  const panel = $('#chat');
-  panel.classList.toggle('hide', !st.chat);
+  $('#chat').classList.toggle('hide', !st.chat);
   $('#chatBtn').classList.toggle('on', st.chat);
-  const keys = st.selected.filter(k => chOf(k));
-  if (!keys.includes(chatTab)) chatTab = keys.includes(st.focus) ? st.focus : keys[0] || null;
+  const ids = st.selected.filter(povOf);
+  if (!ids.includes(chatTab)) chatTab = ids.includes(st.focus) ? st.focus : ids[0] || null;
 
   const tabs = $('#tabs');
   tabs.innerHTML = '';
-  keys.forEach(k => {
-    const ch = chOf(k);
+  ids.forEach(id => {
+    const v = povOf(id);
     const b = document.createElement('button');
-    b.className = k === chatTab ? 'on' : '';
-    b.innerHTML = `<span class="dot ${status[k] === true ? 'live' : ''}"></span>${ch.c}`;
-    b.onclick = () => { chatTab = k; renderChat(); };
+    b.className = id === chatTab ? 'on' : '';
+    b.innerHTML = `<span class="dot ${povStatus(v) === true ? 'live' : ''}"></span>${esc(v.name)}`;
+    b.onclick = () => { chatTab = id; renderChat(); };
     tabs.appendChild(b);
   });
-  tabs.style.display = keys.length ? '' : 'none';
+  tabs.style.display = ids.length ? '' : 'none';
 
   const body = $('#chatbody');
-  for (const [k, fr] of chatFrames) if (!keys.includes(k)) { fr.remove(); chatFrames.delete(k); }
+  const want = chatTab ? chatTab + '|' + activePlat(povOf(chatTab)) : null;
+  for (const [k, fr] of chatFrames) if (!ids.includes(k.split('|')[0])) { fr.remove(); chatFrames.delete(k); }
   let msg = body.querySelector('.msg');
-  if (!chatTab) {
+  const showMsg = html => {
     if (!msg) { msg = document.createElement('div'); msg.className = 'msg'; body.appendChild(msg); }
-    msg.textContent = 'Coloque alguém na cena pra ver o chat.';
+    msg.innerHTML = html;
+  };
+  if (!chatTab) {
+    showMsg('Coloque alguém na cena pra ver o chat.');
+    for (const fr of chatFrames.values()) fr.classList.remove('on');
     $('#chatfoot').innerHTML = '';
     return;
   }
-  if (msg) msg.remove();
-  // só carrega o chat quando a aba é aberta pela primeira vez (e só se o painel estiver visível)
-  if (st.chat && !chatFrames.has(chatTab)) {
-    const fr = document.createElement('iframe');
-    fr.src = chatSrc(chOf(chatTab));
-    body.appendChild(fr);
-    chatFrames.set(chatTab, fr);
+  const v = povOf(chatTab), p = activePlat(v), c = v[p];
+  const src = chatSrc(p, c);
+  if (!src) {
+    showMsg(`O YouTube não deixa colocar o chat aqui.<br><a href="${popoutChat(p, c)}" target="_blank" rel="noopener">Abrir a live de ${esc(v.name)} no YouTube ↗</a>`);
+  } else {
+    if (msg) { msg.remove(); msg = null; }
+    if (st.chat && !chatFrames.has(want)) {
+      const fr = document.createElement('iframe');
+      fr.src = src;
+      body.appendChild(fr);
+      chatFrames.set(want, fr);
+    }
   }
-  for (const [k, fr] of chatFrames) fr.classList.toggle('on', k === chatTab);
-  const ch = chOf(chatTab);
-  const pop = ch.p === 'twitch' ? `https://www.twitch.tv/popout/${ch.c}/chat?popout=` : `https://kick.com/popout/${ch.c}/chat`;
-  $('#chatfoot').innerHTML = `<a href="${pop}" target="_blank" rel="noopener">abrir chat de ${ch.c} em outra janela ↗</a>`;
+  for (const [k, fr] of chatFrames) fr.classList.toggle('on', k === want && !!src);
+  $('#chatfoot').innerHTML = `<a href="${popoutChat(p, c)}" target="_blank" rel="noopener">abrir chat de ${esc(v.name)} em outra janela ↗</a>`;
 }
 
 /* ================= status ================= */
 async function txt(u) { const r = await fetch(u); return (await r.text()).trim(); }
-async function checkTwitch(ch) {
-  const k = id(ch);
+function saveAvatar(k, url) {
+  if (!url || avatars[k]) return;
+  avatars[k] = url;
+  try { localStorage.setItem(AV_KEY, JSON.stringify(avatars)); } catch (e) {}
+}
+async function checkTwitch(c, needAvatar) {
+  const k = key('twitch', c);
   try {
-    const t = (await txt(`https://decapi.me/twitch/uptime/${encodeURIComponent(ch.c)}`)).toLowerCase();
-    status[k] = !(t.includes('offline') || t.includes('not found') || t.includes('error'));
+    const t = (await txt(`https://decapi.me/twitch/uptime/${encodeURIComponent(c)}`)).toLowerCase();
+    status[k] = !(t.includes('offline') || t.includes('not found') || t.includes('error') || t.includes('rate limit'));
     if (status[k]) {
-      const v = parseInt(await txt(`https://decapi.me/twitch/viewercount/${encodeURIComponent(ch.c)}`), 10);
-      viewers[k] = isNaN(v) ? null : v;
+      const n = parseInt(await txt(`https://decapi.me/twitch/viewercount/${encodeURIComponent(c)}`), 10);
+      viewers[k] = isNaN(n) ? null : n;
     } else viewers[k] = null;
   } catch (e) { status[k] = undefined; }
-  if (!avatars[k]) {
-    try {
-      const a = await txt(`https://decapi.me/twitch/avatar/${encodeURIComponent(ch.c)}`);
-      if (/^https:\/\//.test(a)) { avatars[k] = a; localStorage.setItem(AV_KEY, JSON.stringify(avatars)); }
-    } catch (e) {}
+  if (needAvatar && !avatars[k]) {
+    try { const a = await txt(`https://decapi.me/twitch/avatar/${encodeURIComponent(c)}`); if (/^https:\/\//.test(a)) saveAvatar(k, a); } catch (e) {}
   }
 }
-async function checkKick(ch) {
+async function checkKick(c) {
   if (!kickApiOk) return;
-  const k = id(ch);
+  const k = key('kick', c);
   try {
-    const r = await fetch(`https://kick.com/api/v2/channels/${encodeURIComponent(ch.c)}`);
+    const r = await fetch(`https://kick.com/api/v2/channels/${encodeURIComponent(c)}`);
     if (!r.ok) throw 0;
     const j = await r.json();
     status[k] = !!j.livestream;
     viewers[k] = j.livestream ? j.livestream.viewer_count : null;
-    const a = j.user && j.user.profile_pic;
-    if (a && !avatars[k]) { avatars[k] = a; localStorage.setItem(AV_KEY, JSON.stringify(avatars)); }
-  } catch (e) { kickApiOk = false; } // a Kick costuma bloquear chamadas do navegador; aí o status fica "?"
+    saveAvatar(k, j.user && j.user.profile_pic);
+  } catch (e) { kickApiOk = false; }   // a Kick às vezes bloqueia o navegador; aí o status fica "..."
+}
+// roda as checagens de poucas em poucas pra não levar bloqueio
+async function pool(jobs, n) {
+  const q = jobs.slice();
+  await Promise.all(Array.from({ length: n }, async () => { while (q.length) await q.shift()(); }));
 }
 let checking = false;
 async function checkStatus() {
-  if (checking) return;
+  if (checking || !POVS.length) return;
   checking = true;
   $('#refresh').textContent = '↻ ...';
-  await Promise.all(st.channels.map(ch => ch.p === 'twitch' ? checkTwitch(ch) : checkKick(ch)));
+  const jobs = [];
+  const seen = new Set();
+  for (const v of POVS) {
+    for (const p of plats(v)) {
+      const k = key(p, v[p]);
+      if (seen.has(k)) continue;
+      seen.add(k);
+      if (p === 'twitch') jobs.push(() => checkTwitch(v.twitch, !v.skin));
+      if (p === 'kick') jobs.push(() => checkKick(v.kick));
+    }
+  }
+  await pool(jobs, 6);
   checking = false;
   $('#refresh').textContent = '↻ Atualizar';
   if (firstCheck) {
-    // primeira visita: já monta a cena com quem tá ao vivo (Kick sem status entra também)
+    // primeira visita: a cena já começa com quem tá ao vivo
     firstCheck = false;
-    st.selected = st.channels.filter(ch => status[id(ch)] !== false).map(id);
+    st.selected = POVS.filter(v => povStatus(v) === true).map(v => v.id);
     save();
   }
   renderAll();
@@ -548,7 +668,7 @@ function renderAll() {
   renderChat();
   layout();
 }
-function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('on'), 2200); }
+function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('on'), 2400); }
 
 $('#q').oninput = renderList;
 $('#onlyLive').onchange = e => { st.onlyLive = e.target.checked; save(); renderList(); };
@@ -561,46 +681,62 @@ document.querySelectorAll('.plat').forEach(b => b.onclick = () => {
   addPlat = b.dataset.p;
   document.querySelectorAll('.plat').forEach(x => x.classList.toggle('on', x === b));
 });
-$('#chan').oninput = e => { // colou link da kick/twitch? já escolhe a plataforma
+$('#chan').oninput = e => {   // colou um link? já escolhe a plataforma
   const v = e.target.value;
-  const p = /kick\.com/i.test(v) ? 'kick' : /twitch\.tv/i.test(v) ? 'twitch' : null;
+  const p = /kick\.com/i.test(v) ? 'kick' : /twitch\.tv/i.test(v) ? 'twitch' : /youtube\.com|UC[\w-]{22}/.test(v) ? 'youtube' : null;
   if (p) document.querySelector(`.plat[data-p="${p}"]`).click();
 };
 $('#addForm').onsubmit = e => {
   e.preventDefault();
-  const c = clean($('#chan').value);
-  if (!c) return;
-  const k = addPlat + ':' + c;
-  if (!chOf(k)) st.channels.push({ p: addPlat, c });
-  if (!isSel(k)) st.selected.push(k);
+  const raw = $('#chan').value;
+  const c = cleanFor(addPlat, raw);
+  if (!c) { if (addPlat === 'youtube') toast('Cole o link do canal com o ID (começa com UC...)'); return; }
+  const id = idForChannel(addPlat, c);
+  buildPovs();
+  if (!isSel(id)) st.selected.push(id);
   $('#chan').value = '';
   save(); renderAll(); checkStatus();
-  toast(`${c} adicionado ✓`);
+  toast(`${povOf(id).name} na cena ✓`);
 };
 $('#reset').onclick = () => {
-  if (!confirm('Voltar pra lista padrão? Os canais que você adicionou somem.')) return;
-  st.channels = DEFAULTS.slice(); st.selected = []; st.focus = null; firstCheck = true;
-  save(); renderAll(); checkStatus();
+  if (!confirm('Voltar pra lista do Xupeimon? Os canais que você adicionou somem e os escondidos voltam.')) return;
+  st.custom = []; st.hidden = []; st.plat = {};
+  buildPovs(); save(); renderAll(); checkStatus();
 };
 $('#selLive').onclick = () => {
-  const live = st.channels.filter(ch => status[id(ch)] !== false).map(id);
-  st.selected = [...st.selected, ...live.filter(k => !isSel(k))];
+  const live = POVS.filter(v => povStatus(v) === true).map(v => v.id);
+  if (!live.length) { toast('Ninguém ao vivo agora'); return; }
+  st.selected = [...st.selected, ...live.filter(id => !isSel(id))];
   save(); renderAll();
 };
 $('#clear').onclick = () => { st.selected = []; st.focus = null; save(); renderAll(); };
 $('#chatBtn').onclick = () => { st.chat = !st.chat; save(); renderChat(); layout(); };
 $('#chatClose').onclick = () => { st.chat = false; save(); renderChat(); layout(); };
 $('#share').onclick = async () => {
-  const link = location.origin + location.pathname + '?c=' + st.channels.map(id).join(',') + '&v=' + st.selected.join(',');
+  const sel = st.selected.filter(povOf);
+  const custom = sel.filter(id => povOf(id).custom);
+  let link = location.origin + location.pathname + '?v=' + sel.join(',');
+  if (custom.length) link += '&c=' + custom.join(',');
   try { await navigator.clipboard.writeText(link); toast('Link copiado ✓'); }
   catch (e) { prompt('Copie o link:', link); }
 };
 let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(layout, 80); });
 new ResizeObserver(() => layout()).observe($('#scene'));
 
-renderAll();
-checkStatus();
-setInterval(checkStatus, 120000);
+(async function init() {
+  renderAll();
+  try {
+    const r = await fetch('povs.json', { cache: 'no-cache' });
+    const j = await r.json();
+    BOT = (j.povs || []).map(v => ({ ...v, id: String(v.mc || v.name).toLowerCase().replace(/[^a-z0-9_-]/g, '') }));
+  } catch (e) { toast('Não consegui carregar a lista de POVs'); }
+  applyLegacyAndUrl();
+  buildPovs();
+  save();
+  renderAll();
+  checkStatus();
+  setInterval(checkStatus, 120000);
+})();
 </script>
 </body>
 </html>
