@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Xupeimon Multilive 🛸</title>
+<style>
+  :root { --bg:#0b0f0c; --panel:#141a16; --line:#243028; --green:#39ff7a; --txt:#e6efe8; --mut:#8a9a8f; --tw:#9146ff; --kk:#53fc18; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--txt); font:14px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  header { display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; padding:10px 14px; border-bottom:1px solid var(--line); background:var(--panel); position:sticky; top:0; z-index:5; }
+  h1 { margin:0; font-size:18px; letter-spacing:.5px; }
+  h1 span { color:var(--green); }
+  .bar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  button, select, input { font:inherit; color:var(--txt); background:#1c241f; border:1px solid var(--line); border-radius:8px; padding:6px 10px; }
+  button { cursor:pointer; }
+  button:hover { border-color:var(--green); }
+  button.on { background:var(--green); color:#04140a; border-color:var(--green); font-weight:600; }
+  #panel { display:none; padding:12px 14px; border-bottom:1px solid var(--line); background:#101511; }
+  #panel.open { display:block; }
+  #panel form { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px; }
+  #panel input { flex:1; min-width:140px; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; }
+  .chip { display:flex; align-items:center; gap:6px; padding:4px 8px; border-radius:999px; border:1px solid var(--line); background:#18201b; font-size:13px; }
+  .chip .x { background:none; border:none; padding:0 2px; color:var(--mut); }
+  .chip .x:hover { color:#ff6b6b; }
+  .dot { width:8px; height:8px; border-radius:50%; background:#555; flex:none; }
+  .dot.live { background:#ff3b3b; box-shadow:0 0 6px #ff3b3b; }
+  .tag { font-size:11px; font-weight:700; padding:1px 5px; border-radius:4px; color:#fff; }
+  .tag.twitch { background:var(--tw); }
+  .tag.kick { background:var(--kk); color:#04140a; }
+  #grid { display:grid; gap:6px; padding:6px; grid-template-columns:repeat(var(--cols,2),1fr); }
+  .tile { background:#000; border:1px solid var(--line); border-radius:8px; overflow:hidden; display:flex; flex-direction:column; }
+  .tile.big { grid-column:1 / -1; }
+  .tile .top { display:flex; align-items:center; gap:6px; padding:4px 8px; background:var(--panel); font-size:13px; }
+  .tile .top .name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tile .top button { padding:2px 7px; font-size:12px; }
+  .tile .top a { color:var(--mut); text-decoration:none; font-size:12px; }
+  .frame { position:relative; width:100%; aspect-ratio:16/9; }
+  .frame iframe { position:absolute; inset:0; width:100%; height:100%; border:0; }
+  .empty { padding:40px 20px; text-align:center; color:var(--mut); }
+  .hint { color:var(--mut); font-size:12px; margin-top:8px; }
+  @media (max-width:700px){ #grid { grid-template-columns:1fr !important; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>🛸 <span>Xupeimon</span> Multilive</h1>
+  <div class="bar">
+    <button id="onlyLive" title="Esconde canais da Twitch que estão offline">Só quem tá ao vivo</button>
+    <select id="cols" title="Colunas">
+      <option value="auto">Colunas: auto</option>
+      <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+    </select>
+    <button id="refresh">↻ Atualizar status</button>
+    <button id="toggleP">⚙ Canais</button>
+  </div>
+</header>
+
+<div id="panel">
+  <form id="addForm">
+    <select id="plat"><option value="twitch">Twitch</option><option value="kick">Kick</option></select>
+    <input id="chan" placeholder="nome do canal (ex: oflopi)" autocomplete="off">
+    <button type="submit">+ Adicionar</button>
+    <button type="button" id="reset">Restaurar lista padrão</button>
+    <button type="button" id="share">Copiar link com essa lista</button>
+  </form>
+  <div class="chips" id="chips"></div>
+  <div class="hint">As lives começam no mudo — clique no player pra ativar o som. Status ao vivo só é checado na Twitch; os da Kick sempre aparecem (o player mostra se tá offline).</div>
+</div>
+
+<main id="grid"></main>
+
+<script>
+const DEFAULTS = [
+  { p:'kick',   c:'oflopi' },
+  { p:'kick',   c:'o-mitsuke' },
+  { p:'twitch', c:'ironicroseiro' },
+  { p:'twitch', c:'bolhasuco' },
+  { p:'twitch', c:'kojjlul' },
+];
+const KEY = 'xupeimon-multilive-v1';
+const host = location.hostname || 'localhost';
+let channels = load();
+let status = {};          // "twitch:nome" -> true/false/undefined
+let onlyLive = false;
+let big = null;
+
+function store(){ try { localStorage.setItem(KEY, JSON.stringify(channels)); } catch(e){} }
+function load(){
+  const q = new URLSearchParams(location.search).get('c');
+  if (q) {
+    const list = q.split(',').map(s => s.split(':')).filter(a => a.length===2 && (a[0]==='twitch'||a[0]==='kick') && a[1])
+                  .map(([p,c]) => ({p, c:c.toLowerCase()}));
+    if (list.length) return list;
+  }
+  try { const s = JSON.parse(localStorage.getItem(KEY)); if (Array.isArray(s) && s.length) return s; } catch(e){}
+  return DEFAULTS.slice();
+}
+const id = ch => ch.p + ':' + ch.c;
+
+function src(ch){
+  if (ch.p === 'twitch') return `https://player.twitch.tv/?channel=${encodeURIComponent(ch.c)}&parent=${encodeURIComponent(host)}&muted=true&autoplay=true`;
+  return `https://player.kick.com/${encodeURIComponent(ch.c)}?muted=true&autoplay=true`;
+}
+function url(ch){ return ch.p === 'twitch' ? `https://twitch.tv/${ch.c}` : `https://kick.com/${ch.c}`; }
+
+function visible(){
+  return channels.filter(ch => !onlyLive || ch.p === 'kick' || status[id(ch)] !== false);
+}
+
+function renderChips(){
+  const box = document.getElementById('chips');
+  box.innerHTML = '';
+  channels.forEach((ch, i) => {
+    const s = status[id(ch)];
+    const el = document.createElement('span');
+    el.className = 'chip';
+    el.innerHTML = `<span class="dot ${s ? 'live':''}"></span><span class="tag ${ch.p}">${ch.p==='twitch'?'TW':'KICK'}</span>${ch.c}<button class="x" title="Remover">✕</button>`;
+    el.querySelector('.x').onclick = () => { channels.splice(i,1); store(); renderAll(); };
+    box.appendChild(el);
+  });
+}
+
+// Mantém iframes existentes para não recarregar as lives à toa
+const tiles = new Map();
+function renderGrid(){
+  const grid = document.getElementById('grid');
+  const vis = visible();
+  const colSel = document.getElementById('cols').value;
+  const n = vis.length;
+  const cols = colSel === 'auto' ? (n <= 1 ? 1 : n <= 4 ? 2 : n <= 9 ? 3 : 4) : +colSel;
+  grid.style.setProperty('--cols', cols);
+
+  const keep = new Set(vis.map(id));
+  for (const [k, el] of tiles) if (!keep.has(k)) { el.remove(); tiles.delete(k); }
+
+  if (!n) {
+    grid.innerHTML = '<div class="empty">Ninguém ao vivo agora (ou lista vazia). Abra ⚙ Canais pra adicionar alguém.</div>';
+    tiles.clear();
+    return;
+  }
+  const emptyEl = grid.querySelector('.empty'); if (emptyEl) emptyEl.remove();
+
+  vis.forEach(ch => {
+    const k = id(ch);
+    let el = tiles.get(k);
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'tile';
+      el.innerHTML = `<div class="top"><span class="dot"></span><span class="tag ${ch.p}">${ch.p==='twitch'?'TW':'KICK'}</span>
+        <span class="name">${ch.c}</span>
+        <button class="bigb" title="Destacar">⤢</button>
+        <a href="${url(ch)}" target="_blank" rel="noopener">abrir ↗</a></div>
+        <div class="frame"><iframe src="${src(ch)}" allowfullscreen allow="autoplay; fullscreen"></iframe></div>`;
+      el.querySelector('.bigb').onclick = () => { big = big === k ? null : k; renderGrid(); };
+      tiles.set(k, el);
+    }
+    el.classList.toggle('big', big === k);
+    el.querySelector('.dot').classList.toggle('live', !!status[k]);
+    grid.appendChild(el); // reordena sem recriar
+  });
+}
+
+function renderAll(){ renderChips(); renderGrid(); }
+
+async function checkStatus(){
+  await Promise.all(channels.filter(ch => ch.p === 'twitch').map(async ch => {
+    try {
+      const r = await fetch(`https://decapi.me/twitch/uptime/${encodeURIComponent(ch.c)}`);
+      const t = (await r.text()).toLowerCase();
+      status[id(ch)] = !(t.includes('offline') || t.includes('not found') || t.includes('error'));
+    } catch(e) { status[id(ch)] = undefined; }
+  }));
+  renderAll();
+}
+
+document.getElementById('addForm').onsubmit = e => {
+  e.preventDefault();
+  const p = document.getElementById('plat').value;
+  let c = document.getElementById('chan').value.trim().toLowerCase()
+          .replace(/^https?:\/\/(www\.)?(twitch\.tv|kick\.com)\//,'').replace(/[\/?#].*$/,'');
+  if (!c) return;
+  if (!channels.some(ch => ch.p === p && ch.c === c)) { channels.push({p,c}); store(); }
+  document.getElementById('chan').value = '';
+  renderAll(); checkStatus();
+};
+document.getElementById('reset').onclick = () => { channels = DEFAULTS.slice(); store(); renderAll(); checkStatus(); };
+document.getElementById('share').onclick = async e => {
+  const link = location.origin + location.pathname + '?c=' + channels.map(id).join(',');
+  try { await navigator.clipboard.writeText(link); e.target.textContent = 'Link copiado ✓'; }
+  catch(err) { e.target.textContent = link; }
+  setTimeout(() => e.target.textContent = 'Copiar link com essa lista', 2500);
+};
+document.getElementById('toggleP').onclick = () => document.getElementById('panel').classList.toggle('open');
+document.getElementById('onlyLive').onclick = e => { onlyLive = !onlyLive; e.target.classList.toggle('on', onlyLive); renderGrid(); };
+document.getElementById('cols').onchange = renderGrid;
+document.getElementById('refresh').onclick = checkStatus;
+
+renderAll();
+checkStatus();
+setInterval(checkStatus, 120000);
+</script>
+</body>
+</html>
