@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-09T02:54:19.622Z",
+ "updated": "2026-11-09T03:02:12.118Z",
  "povs": [
   {
    "name": "EuSleep",
@@ -266,6 +266,8 @@
    "name": "Michi",
    "mc": "Michi8155",
    "kick": "caionomichi",
+   "skin": "skins/michi8155.png",
+   "skinV": "1819bda1",
    "pokemon": [
     "gastly"
    ]
