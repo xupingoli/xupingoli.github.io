@@ -392,14 +392,17 @@ function activePlat(v) {
 }
 
 /* ================= urls ================= */
+const ytVideo = {};   // canal do YouTube (UC...) -> ID da live, vindo do bot
 function playerSrc(p, c) {
   if (p === 'twitch') return `https://player.twitch.tv/?channel=${encodeURIComponent(c)}&parent=${encodeURIComponent(host)}&muted=true&autoplay=true`;
   if (p === 'kick') return `https://player.kick.com/${encodeURIComponent(c)}?muted=true&autoplay=true`;
+  if (ytVideo[c]) return `https://www.youtube.com/embed/${ytVideo[c]}?autoplay=1&mute=1`;
   return `https://www.youtube.com/embed/live_stream?channel=${encodeURIComponent(c)}&autoplay=1&mute=1`;
 }
 function chatSrc(p, c) {
   if (p === 'twitch') return `https://www.twitch.tv/embed/${encodeURIComponent(c)}/chat?parent=${encodeURIComponent(host)}&darkpopout`;
   if (p === 'kick') return `https://kick.com/popout/${encodeURIComponent(c)}/chat`;
+  if (ytVideo[c]) return `https://www.youtube.com/live_chat?v=${ytVideo[c]}&embed_domain=${encodeURIComponent(host)}`;
   return null; // o YouTube só deixa embutir o chat sabendo o ID da live
 }
 function pageUrl(p, c) {
@@ -518,9 +521,11 @@ function ensureTile(v) {
   let el = tiles.get(v.id);
   const p = activePlat(v), c = v[p];
   if (el) {
-    if (el.dataset.plat !== p) {     // trocou de plataforma (ex.: entrou ao vivo na Kick)
+    const src = playerSrc(p, c);
+    if (el.dataset.plat !== p || el.dataset.src !== src) {     // trocou de plataforma ou a live do YouTube começou
       el.dataset.plat = p;
-      el.querySelector('iframe').src = playerSrc(p, c);
+      el.dataset.src = src;
+      el.querySelector('iframe').src = src;
       el.querySelector('.lt').outerHTML = `<span class="lt">${tagHtml(p)}</span>`;
       el.querySelector('.ab').href = pageUrl(p, c);
       updatePb(el, v, p);
@@ -530,6 +535,7 @@ function ensureTile(v) {
   el = document.createElement('div');
   el.className = 'tile' + (bgOf(v.id) % 2 ? ' alt' : '');
   el.dataset.plat = p;
+  el.dataset.src = playerSrc(p, c);
   el.innerHTML = `
     <div class="lbl"><span class="dot"></span><span class="lt">${tagHtml(p)}</span><span>${esc(v.name)}</span></div>
     <div class="ctl">
@@ -539,7 +545,7 @@ function ensureTile(v) {
       <a class="ab" href="${pageUrl(p, c)}" target="_blank" rel="noopener" title="Abrir no site">↗</a>
       <button class="x" title="Tirar da cena">✕</button>
     </div>
-    <iframe src="${playerSrc(p, c)}" allowfullscreen allow="autoplay; fullscreen; picture-in-picture"></iframe>`;
+    <iframe src="${playerSrc(p, c)}" allowfullscreen allow="autoplay; fullscreen; picture-in-picture; encrypted-media" referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
   updatePb(el, v, p);
   el.querySelector('.pb').onclick = () => {
     const ps = plats(v), cur = el.dataset.plat;
@@ -662,7 +668,7 @@ function renderChat() {
   tabs.style.display = ids.length ? '' : 'none';
 
   const body = $('#chatbody');
-  const want = chatTab ? chatTab + '|' + activePlat(povOf(chatTab)) : null;
+  const want = chatTab ? (() => { const vv = povOf(chatTab), pp = activePlat(vv); return chatTab + '|' + pp + '|' + (pp === 'youtube' ? (ytVideo[vv.youtube] || '') : ''); })() : null;
   for (const [k, fr] of chatFrames) if (!ids.includes(k.split('|')[0])) { fr.remove(); chatFrames.delete(k); }
   let msg = body.querySelector('.msg');
   const showMsg = html => {
@@ -683,6 +689,7 @@ function renderChat() {
     if (msg) { msg.remove(); msg = null; }
     if (st.chat && !chatFrames.has(want)) {
       const fr = document.createElement('iframe');
+      fr.referrerPolicy = 'strict-origin-when-cross-origin';
       fr.src = src;
       body.appendChild(fr);
       chatFrames.set(want, fr);
@@ -730,6 +737,35 @@ async function pool(jobs, n) {
   const q = jobs.slice();
   await Promise.all(Array.from({ length: n }, async () => { while (q.length) await q.shift()(); }));
 }
+let botLive = null;
+async function checkBotLive() {
+  try {
+    let j;
+    try {
+      const r = await fetch('https://api.github.com/repos/xupingoli/xupingoli.github.io/contents/multistream/live.json', { headers: { Accept: 'application/vnd.github.raw+json' }, cache: 'no-store' });
+      if (!r.ok) throw 0;
+      j = await r.json();
+    } catch { j = await (await fetch('live.json?t=' + Date.now())).json(); }
+    // o bot confirma a cada 6h; mais velho que isso = bot desligado, não dá pra confiar
+    botLive = Date.now() - Date.parse(j.updated) < 7 * 3600 * 1000 ? (j.lives || {}) : null;
+  } catch { botLive = null; }
+}
+function applyBotLive() {
+  if (!botLive) return;
+  for (const v of POVS) {
+    if (v.custom) continue;
+    const ent = botLive[v.id] || [];
+    if (v.youtube) {
+      const e = ent.find(x => x.p === 'youtube');
+      status[key('youtube', v.youtube)] = !!e;
+      if (e && e.video) ytVideo[v.youtube] = e.video; else delete ytVideo[v.youtube];
+    }
+    // Twitch/Kick: se o navegador não conseguiu checar, usa o que o bot viu
+    for (const p of ['twitch', 'kick']) {
+      if (v[p] && status[key(p, v[p])] === undefined) status[key(p, v[p])] = ent.some(x => x.p === p);
+    }
+  }
+}
 let checking = false;
 async function checkStatus() {
   if (checking || !POVS.length) return;
@@ -746,7 +782,8 @@ async function checkStatus() {
       if (p === 'kick') jobs.push(() => checkKick(v.kick));
     }
   }
-  await pool(jobs, 6);
+  await Promise.all([pool(jobs, 6), checkBotLive()]);
+  applyBotLive();
   checking = false;
   $('#refresh').textContent = '↻ Atualizar';
   if (firstCheck) {
