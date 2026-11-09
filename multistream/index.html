@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Xupeimon · Multi-View</title>
-<link rel="icon" type="image/png" href="img/favicon.png">
+<link rel="icon" type="image/png" href="img/favicon.png?v=3">
 <meta name="theme-color" content="#0b0912">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -601,7 +601,7 @@ function layout() {
   scene.classList.toggle('empty', !ids.length);
   let msg = scene.querySelector('.emptymsg');
   if (!ids.length) {
-    if (!msg) { msg = document.createElement('div'); msg.className = 'emptymsg'; msg.innerHTML = '<img src="img/favicon.png" alt=""><h3 class="px">Sua cena tá vazia</h3><p>Escolha <b>POVs</b> na esquerda pra assistir todo mundo ao mesmo tempo.</p>'; scene.appendChild(msg); }
+    if (!msg) { msg = document.createElement('div'); msg.className = 'emptymsg'; msg.innerHTML = '<img src="img/favicon.png?v=3" alt=""><h3 class="px">Sua cena tá vazia</h3><p>Escolha <b>POVs</b> na esquerda pra assistir todo mundo ao mesmo tempo.</p>'; scene.appendChild(msg); }
     scene.style.height = '';
     return;
   }
