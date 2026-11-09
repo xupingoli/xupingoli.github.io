@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-09T02:51:36.690Z",
+ "updated": "2026-11-09T02:54:19.622Z",
  "povs": [
   {
    "name": "EuSleep",
@@ -94,6 +94,16 @@
    "skinV": "b7dead05",
    "pokemon": [
     "pikachu"
+   ]
+  },
+  {
+   "name": "pixeldsn",
+   "mc": "pixeldsn",
+   "youtube": "UCPFOH8nidF4lIWeZgHwGwfw",
+   "skin": "skins/pixeldsn.png",
+   "skinV": "8c5fad2c",
+   "pokemon": [
+    "victini"
    ]
   },
   {
