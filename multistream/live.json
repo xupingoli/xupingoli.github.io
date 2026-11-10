@@ -1,10 +1,15 @@
 {
- "updated": "2026-11-10T18:39:06.353Z",
+ "updated": "2026-11-10T19:29:09.817Z",
  "lives": {
   "carteiro_cosmico": [
    {
     "p": "youtube",
     "video": "gP6wKWUpUYQ"
+   }
+  ],
+  "o_oshii": [
+   {
+    "p": "twitch"
    }
   ]
  }
