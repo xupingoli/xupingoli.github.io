@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-10T19:40:57.554Z",
+ "updated": "2026-11-11T19:41:46.550Z",
  "povs": [
   {
    "name": "EuSleep",
@@ -7,7 +7,7 @@
    "twitch": "eusleep",
    "kick": "eusleep",
    "skin": "skins/eusleep.png",
-   "skinV": "b1fedf24",
+   "skinV": "f8199110",
    "pokemon": [
     "skitty"
    ]
