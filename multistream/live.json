@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-12T19:59:10.511Z",
+ "updated": "2026-11-12T21:10:28.964Z",
  "lives": {
   "carteiro_cosmico": [
    {
@@ -10,6 +10,16 @@
   "dolededole": [
    {
     "p": "kick"
+   }
+  ],
+  "eusleep": [
+   {
+    "p": "twitch"
+   }
+  ],
+  "veiin": [
+   {
+    "p": "twitch"
    }
   ]
  }
