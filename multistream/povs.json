@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-11T22:37:40.114Z",
+ "updated": "2026-11-12T02:28:17.152Z",
  "povs": [
   {
    "name": "EuSleep",
@@ -104,6 +104,17 @@
    "skinV": "8c5fad2c",
    "pokemon": [
     "victini"
+   ]
+  },
+  {
+   "name": "Haichi",
+   "mc": "Haichi",
+   "twitch": "haichinya",
+   "skin": "skins/haichi.png",
+   "skinV": "f4817b2b",
+   "slim": true,
+   "pokemon": [
+    "treecko"
    ]
   },
   {
