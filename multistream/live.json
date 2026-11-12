@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-12T22:25:53.141Z",
+ "updated": "2026-11-12T22:39:52.315Z",
  "lives": {
   "carteiro_cosmico": [
    {
@@ -30,6 +30,11 @@
   "o_oshii": [
    {
     "p": "twitch"
+   }
+  ],
+  "sotuna": [
+   {
+    "p": "kick"
    }
   ],
   "veiin": [
