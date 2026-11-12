@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-12T21:10:28.964Z",
+ "updated": "2026-11-12T21:12:06.331Z",
  "lives": {
   "carteiro_cosmico": [
    {
@@ -13,6 +13,11 @@
    }
   ],
   "eusleep": [
+   {
+    "p": "twitch"
+   }
+  ],
+  "grabelkk": [
    {
     "p": "twitch"
    }
