@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-13T23:13:25.198Z",
+ "updated": "2026-11-13T23:47:25.469Z",
  "lives": {
   "amadameruby": [
    {
@@ -28,6 +28,11 @@
    }
   ],
   "winch4as": [
+   {
+    "p": "twitch"
+   }
+  ],
+  "zeffz_": [
    {
     "p": "twitch"
    }
