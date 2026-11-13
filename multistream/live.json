@@ -1,10 +1,15 @@
 {
- "updated": "2026-11-13T21:20:24.935Z",
+ "updated": "2026-11-13T21:52:00.137Z",
  "lives": {
   "carteiro_cosmico": [
    {
     "p": "youtube",
     "video": "JUoEvGhVDPI"
+   }
+  ],
+  "fusume": [
+   {
+    "p": "twitch"
    }
   ],
   "winch4as": [
