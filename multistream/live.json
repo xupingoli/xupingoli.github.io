@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-13T22:16:43.478Z",
+ "updated": "2026-11-13T22:23:54.353Z",
  "lives": {
   "carteiro_cosmico": [
    {
@@ -13,6 +13,11 @@
    }
   ],
   "fusume": [
+   {
+    "p": "twitch"
+   }
+  ],
+  "kojjj": [
    {
     "p": "twitch"
    }
