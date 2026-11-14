@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-13T23:47:25.469Z",
+ "updated": "2026-11-14T00:03:26.526Z",
  "lives": {
   "amadameruby": [
    {
@@ -13,6 +13,11 @@
    }
   ],
   "fusume": [
+   {
+    "p": "twitch"
+   }
+  ],
+  "haichi": [
    {
     "p": "twitch"
    }
