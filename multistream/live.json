@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-14T00:32:25.762Z",
+ "updated": "2026-11-14T01:15:26.019Z",
  "lives": {
   "amadameruby": [
    {
@@ -25,6 +25,11 @@
   "pecanha": [
    {
     "p": "twitch"
+   }
+  ],
+  "sotuna": [
+   {
+    "p": "kick"
    }
   ],
   "winch4as": [
