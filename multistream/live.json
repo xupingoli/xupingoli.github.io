@@ -1,6 +1,16 @@
 {
- "updated": "2026-11-15T19:43:34.132Z",
+ "updated": "2026-11-15T19:49:35.772Z",
  "lives": {
+  "eusleep": [
+   {
+    "p": "twitch"
+   }
+  ],
+  "o_oshii": [
+   {
+    "p": "twitch"
+   }
+  ],
   "sotuna": [
    {
     "p": "kick"
