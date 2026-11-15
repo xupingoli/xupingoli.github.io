@@ -1,9 +1,14 @@
 {
- "updated": "2026-11-15T15:49:46.125Z",
+ "updated": "2026-11-15T19:29:35.052Z",
  "lives": {
   "starkinho": [
    {
     "p": "twitch"
+   }
+  ],
+  "zca": [
+   {
+    "p": "discord"
    }
   ]
  }
