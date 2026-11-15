@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-15T22:25:38.512Z",
+ "updated": "2026-11-15T22:28:39.688Z",
  "lives": {
   "carteiro_cosmico": [
    {
@@ -8,6 +8,11 @@
    }
   ],
   "comjuteviteazull": [
+   {
+    "p": "twitch"
+   }
+  ],
+  "haichi": [
    {
     "p": "twitch"
    }
