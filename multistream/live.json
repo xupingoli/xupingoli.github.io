@@ -1,6 +1,11 @@
 {
- "updated": "2026-11-15T19:33:35.287Z",
+ "updated": "2026-11-15T19:43:34.132Z",
  "lives": {
+  "sotuna": [
+   {
+    "p": "kick"
+   }
+  ],
   "starkinho": [
    {
     "p": "twitch"
