@@ -1,7 +1,12 @@
 {
- "updated": "2026-11-16T20:12:49.411Z",
+ "updated": "2026-11-16T20:52:50.266Z",
  "lives": {
   "fusume": [
+   {
+    "p": "twitch"
+   }
+  ],
+  "winch4as": [
    {
     "p": "twitch"
    }
