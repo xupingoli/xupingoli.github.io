@@ -1,9 +1,14 @@
 {
- "updated": "2026-11-17T22:10:08.853Z",
+ "updated": "2026-11-17T22:20:09.904Z",
  "lives": {
+  "fusume": [
+   {
+    "p": "twitch"
+   }
+  ],
   "kojjj": [
    {
-    "p": "discord"
+    "p": "twitch"
    }
   ],
   "starkinho": [
