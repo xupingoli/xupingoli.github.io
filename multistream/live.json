@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-19T21:01:10.229Z",
+ "updated": "2026-11-19T21:53:10.572Z",
  "lives": {
   "carteiro_cosmico": [
    {
@@ -10,6 +10,11 @@
   "fusume": [
    {
     "p": "twitch"
+   }
+  ],
+  "michi8155": [
+   {
+    "p": "kick"
    }
   ]
  }
