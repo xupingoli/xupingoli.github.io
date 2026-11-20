@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-20T21:32:27.146Z",
+ "updated": "2026-11-20T21:39:27.068Z",
  "lives": {
   "carteiro_cosmico": [
    {
@@ -10,6 +10,12 @@
   "fusume": [
    {
     "p": "twitch"
+   }
+  ],
+  "pixeldsn": [
+   {
+    "p": "youtube",
+    "video": "aoDXmCwr_h0"
    }
   ]
  }
