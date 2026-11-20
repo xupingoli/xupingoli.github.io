@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-20T23:17:28.445Z",
+ "updated": "2026-11-20T23:31:29.021Z",
  "lives": {
   "carteiro_cosmico": [
    {
@@ -20,6 +20,11 @@
   "zca": [
    {
     "p": "discord"
+   }
+  ],
+  "zecagods": [
+   {
+    "p": "twitch"
    }
   ]
  }
